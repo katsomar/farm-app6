@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Panel - FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h2>Vendor Panel</h2>
+    <nav>
+        <ul>
+            <li><a href="login.html">Admin</a></li>
+            <li><a href="sales.html">Sales</a></li>
+            <li><a href="product-tracking.html">Product Tracking</a></li>
+        </ul>
+    </nav>
+    <form id="vendorForm">
+        <label for="productSelect">Select Product:</label>
+        <select id="productSelect"></select>
+        
+        <label for="quantitySold">Quantity:</label>
+        <input type="number" id="quantitySold" required>
+        
+        <input type="hidden" id="salesOrderNumber">
+
+        <button type="button" onclick="addToCart()">Add to Cart</button>
+        <button type="button" onclick="clearCart()">Clear Cart</button>
+    </form>
+    <h3>Cart</h3>
+    <ul id="cartList" style="max-height: 200px; overflow-y: auto;"></ul>
+    <h4>Total Cost: UGX <span id="totalCost">0</span></h4>
+    <h3>Payment</h3>
+    <label for="paymentMethod">Select Payment Method:</label>
+    <select id="paymentMethod" onchange="updatePaymentDetails()">
+        <option value="cash">Cash</option>
+        <option value="airtel_money">Airtel Money</option>
+        <option value="mtn_money">MTN Money</option>
+        <option value="bank">Bank</option>
+    </select>
+    <div id="paymentDetails"></div>
+    <label for="amountPaid">Amount Paid:</label>
+    <input type="number" id="amountPaid" required>
+    <div id="debtorDetails" style="display: none;">
+        <label for="debtorName">Debtor's Name:</label>
+        <input type="text" id="debtorName">
+        <label for="debtorContact">Debtor's Contact:</label>
+        <input type="text" id="debtorContact">
+        <button type="button" onclick="confirmDebtorDetails()">Done</button>
+    </div>
+    <button type="button" onclick="confirmPayment()">Confirm Payment</button>
+    <div id="receiptContainer" style="padding: 20px; background-color: #ecf0f1; border-top: 1px solid #bdc3c7; margin-top: 20px;"></div>
+    <div id="demandingFormContainer" style="padding: 20px; background-color: #f8d7da; border-top: 1px solid #f5c6cb; margin-top: 20px;"></div>
+    <button type="button" onclick="printReceipt()">Print Receipt</button>
+    <button type="button" onclick="printDemandingForm()">Print Demanding Form</button>
+    <script src="script.js"></script>
+</body>
+</html>

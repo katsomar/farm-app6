@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Tracking - FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        let products = [];
+        let sales = [];
+
+        // Load products from localStorage
+        function loadProducts() {
+            const savedProducts = localStorage.getItem('products');
+            if (savedProducts) {
+                products = JSON.parse(savedProducts);
+            }
+        }
+
+        // Load sales from localStorage
+        function loadSales() {
+            const savedSales = localStorage.getItem('sales');
+            if (savedSales) {
+                sales = JSON.parse(savedSales);
+            }
+        }
+
+        // Load tracking data from localStorage
+        function loadTrackingData() {
+            const trackingRecords = JSON.parse(localStorage.getItem('trackingRecords')) || [];
+            trackingRecords.forEach(record => {
+                if (record.products && record.products.length > 0) {
+                    createNewTrackingTable(record.date, record.products);
+                }
+            });
+        }
+
+        // Update tracking table and save data
+        function updateTrackingTable() {
+            const trackingContainer = document.getElementById('trackingContainer');
+            if (!trackingContainer) {
+                console.error('Tracking container not found'); // Debugging line
+                return;
+            }
+
+            const today = new Date().toLocaleDateString();
+            const formattedDate = today.replace(/\//g, '-');
+            const existingTable = document.getElementById(`trackingTableBody-${formattedDate}`);
+            
+            if (existingTable) {
+                existingTable.parentNode.parentNode.remove();
+            }
+
+            if (products && products.length > 0) {
+                createNewTrackingTable(today, products);
+            }
+        }
+
+        function createNewTrackingTable(date, products) {
+            const trackingContainer = document.getElementById('trackingContainer');
+            const formattedDate = date.replace(/\//g, '-');
+            const month = new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            // Remove existing section if it exists
+            const existingSection = document.getElementById(`tracking-section-${formattedDate}`);
+            if (existingSection) {
+                existingSection.remove();
+            }
+
+            const trackingTable = document.createElement('table');
+            trackingTable.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Product Name</th>
+                        <th>Opening Stock</th>
+                        <th>Replenishments</th>
+                        <th>Total Items</th>
+                        <th>Items Sold</th>
+                        <th>Closing Stock</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="trackingTableBody-${formattedDate}">
+                    ${products.map((product, index) => {
+                        const openingStock = product.openingStock; // Use opening stock from product data
+                        const totalReplenishments = product.replenishments.reduce((a, b) => a + b.quantity, 0);
+                        const totalItems = openingStock + totalReplenishments;
+                        const totalSales = product.totalSales || 0; // Use total sales from product data
+                        const closingStock = totalItems - totalSales;
+
+                        return `
+                            <tr>
+                                <td>${date}</td>
+                                <td>${product.name}</td>
+                                <td>${openingStock}</td>
+                                <td>${totalReplenishments} <button onclick="clearReplenishments(${index})">Clear</button></td>
+                                <td>${totalItems}</td>
+                                <td>${totalSales} <button onclick="clearSales(${index})">Clear</button></td>
+                                <td>${closingStock}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            `;
+
+            const collapsibleSection = document.createElement('div');
+            collapsibleSection.classList.add('collapsible-section');
+
+            const buttonContainer = document.createElement('div');
+            buttonContainer.style.display = 'flex';
+            buttonContainer.style.alignItems = 'center';
+
+            const button = document.createElement('button');
+            button.classList.add('collapsible');
+            button.textContent = `Tracking Records for ${date}`;
+            button.onclick = function() {
+                const content = document.getElementById(`content-${formattedDate}`);
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+            };
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.style.marginLeft = '10px';
+            deleteButton.onclick = () => {
+                const password = prompt('Enter password to delete:');
+                if (password === 'admin123') { // Replace 'your_password' with the actual password
+                    const section = document.getElementById(`tracking-section-${formattedDate}`);
+                    section.remove();
+                } else {
+                    alert('Incorrect password');
+                }
+            };
+
+            buttonContainer.appendChild(button);
+            buttonContainer.appendChild(deleteButton);
+
+            const content = document.createElement('div');
+            content.classList.add('content');
+            content.id = `content-${formattedDate}`;
+            content.style.display = 'none'; // Ensure the content is hidden by default
+
+            const tableContainer = document.createElement('div');
+            tableContainer.classList.add('table-container');
+            tableContainer.appendChild(trackingTable);
+
+            content.appendChild(tableContainer);
+            collapsibleSection.appendChild(buttonContainer);
+            collapsibleSection.appendChild(content);
+            collapsibleSection.id = `tracking-section-${formattedDate}`;
+
+            // Monthly section
+            let monthlySection = document.getElementById(`monthly-section-${month}`);
+            if (!monthlySection) {
+                monthlySection = document.createElement('div');
+                monthlySection.classList.add('monthly-section');
+                monthlySection.id = `monthly-section-${month}`;
+
+                const monthlyButton = document.createElement('button');
+                monthlyButton.classList.add('collapsible');
+                monthlyButton.textContent = `Tracking Records for ${month}`;
+                monthlyButton.onclick = function() {
+                    const monthlyContent = document.getElementById(`monthly-content-${month}`);
+                    monthlyContent.style.display = monthlyContent.style.display === 'none' ? 'block' : 'none';
+                };
+
+                const monthlyContent = document.createElement('div');
+                monthlyContent.classList.add('content');
+                monthlyContent.id = `monthly-content-${month}`;
+                monthlyContent.style.display = 'none';
+
+                monthlySection.appendChild(monthlyButton);
+                monthlySection.appendChild(monthlyContent);
+                trackingContainer.appendChild(monthlySection);
+            }
+
+            const monthlyContent = document.getElementById(`monthly-content-${month}`);
+            monthlyContent.appendChild(collapsibleSection);
+
+            console.log('Tracking table created for date:', date); // Debugging line
+            console.log('Tracking table HTML:', trackingTable.outerHTML); // Debugging line
+
+            // Save tracking data to localStorage
+            saveTrackingData();
+        }
+
+        function saveTrackingData() {
+            const trackingData = { date: new Date().toLocaleDateString(), products };
+            let trackingRecords = JSON.parse(localStorage.getItem('trackingRecords')) || [];
+            const existingRecordIndex = trackingRecords.findIndex(record => record.date === trackingData.date);
+            if (existingRecordIndex !== -1) {
+                trackingRecords[existingRecordIndex] = trackingData;
+            } else {
+                trackingRecords.push(trackingData);
+            }
+            localStorage.setItem('trackingRecords', JSON.stringify(trackingRecords));
+        }
+
+        function clearReplenishments(index) {
+            const totalReplenishments = products[index].replenishments.reduce((a, b) => a + b.quantity, 0);
+            products[index].quantity -= totalReplenishments; // Update quantity
+            products[index].replenishments = [];
+            saveTrackingData(); // Save changes
+            updateTrackingTable();
+            updateProductList(); // Update product list
+            saveProducts(); // Save products to localStorage
+            console.log(`Replenishments cleared for product index: ${index}`); // Debugging line
+        }
+
+        function saveProducts() {
+            localStorage.setItem('products', JSON.stringify(products));
+        }
+
+        function updateProductList() {
+            // This function should update the product list in the admin product list
+            // Implement the logic to update the product list in the admin product list
+        }
+
+        function clearSales(index) {
+            products[index].totalSales = 0;
+            saveTrackingData(); // Save changes
+            updateTrackingTable();
+            updateProductList(); // Update product list
+            saveProducts(); // Save products to localStorage
+            console.log(`Sales cleared for product index: ${index}`); // Debugging line
+        }
+
+        function clearTrackingData() {
+            localStorage.removeItem('trackingRecords');
+            console.log('Tracking data cleared'); // Debugging line
+            saveTrackingData(); // Save tracking data to localStorage
+        }
+
+        // Load products, sales, and tracking data when the page loads
+        window.onload = function() {
+            loadProducts();
+            loadSales();
+            loadTrackingData();
+            updateTrackingTable();
+        };
+
+        // Function to check if it's 5 AM E.A.T and add the new business day date and create new table
+        function checkNewBusinessDay() {
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+
+            // Check if it's 5 AM E.A.T (05:00)
+            if (hours === 5 && minutes === 0) {
+                products.forEach(product => {
+                    product.openingStock = product.quantity; // Set opening stock to current quantity at the start of the day
+                    product.totalSales = 0; // Reset total sales for the new day
+                    product.replenishments = []; // Reset replenishments for the new day
+                });
+                createNewTrackingTable(now.toLocaleDateString(), products); // Create new tracking table for the new day
+            }
+        }
+
+        // Set an interval to check the time every minute
+        setInterval(checkNewBusinessDay, 60000);
+
+        
+        
+    </script>
+</head>
+<body>
+    <h2>Product Tracking</h2>
+    <nav>
+        <ul>
+            <li><a href="login.html">Admin</a></li>
+            <li><a href="vendor.html">Vendor</a></li>
+            <li><a href="sales.html">Sales</a></li>
+        </ul>
+    </nav>
+    <div id="trackingContainer"></div> <!-- Ensure this div is present -->
+</body>
+</html>

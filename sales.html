@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales - FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+    <script>
+        let sales = [];
+
+        // Load sales from localStorage
+        function loadSales() {
+            const savedSales = localStorage.getItem('sales');
+            if (savedSales) {
+                sales = JSON.parse(savedSales);
+            }
+        }
+
+        // Function to format date to DD/MM/YYYY
+        function formatDate(date) {
+            const d = new Date(date);
+            if (isNaN(d.getTime())) {
+                const parts = date.split('/');
+                if (parts.length === 3) {
+                    const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                    return formatDate(formattedDate);
+                }
+                console.error(`Invalid date: ${date}`);
+                return 'Invalid Date';
+            }
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // Function to format month to MM/YYYY
+        function formatMonth(month) {
+            const [year, monthNumber] = month.split('-');
+            return `${String(monthNumber).padStart(2, '0')}/${year}`;
+        }
+
+        // Function to group sales by month
+        function groupSalesByMonth(sales) {
+            return sales.reduce((acc, sale) => {
+                const date = new Date(sale.date);
+                const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!acc[month]) {
+                    acc[month] = [];
+                }
+                acc[month].push(sale);
+                return acc;
+            }, {});
+        }
+
+        // Function to update the sales table
+        function updateSalesTable() {
+            const salesContainer = document.getElementById('salesContainer');
+            const debtorsContainer = document.getElementById('debtorsContainer');
+            
+            if (!salesContainer || !debtorsContainer) {
+                console.error('Sales or Debtors container not found');
+                return;
+            }
+
+            salesContainer.innerHTML = '';
+            debtorsContainer.innerHTML = '';
+
+            const salesByMonth = groupSalesByMonth(sales);
+
+            for (const [month, monthlySales] of Object.entries(salesByMonth)) {
+                const formattedMonth = formatMonth(month); // Ensure month is correctly formatted
+                const monthDiv = document.createElement('div');
+                const monthButton = document.createElement('button');
+                monthButton.textContent = `Sales Records for ${formattedMonth}`;
+                monthButton.onclick = () => {
+                    const content = document.getElementById(`content-${month}`);
+                    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                };
+
+                const monthContentDiv = document.createElement('div');
+                monthContentDiv.id = `content-${month}`;
+                monthContentDiv.style.display = 'none';
+
+                const salesByDate = groupSalesByDate(monthlySales);
+
+                for (const [date, dailySales] of Object.entries(salesByDate)) {
+                    const formattedDate = formatDate(date); // Ensure date is correctly formatted
+                    console.log(`Formatted Date: ${formattedDate}`); // Debugging line
+                    const salesTable = createSalesTable(formattedDate, dailySales);
+                    const debtorsTable = createDebtorsTable(formattedDate, dailySales);
+
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.style.display = 'flex';
+                    buttonContainer.style.alignItems = 'center';
+
+                    const dropdownButton = document.createElement('button');
+                    dropdownButton.textContent = `Sales Records for ${formattedDate}`;
+                    dropdownButton.onclick = () => {
+                        const content = document.getElementById(`content-${formattedDate}`);
+                        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                    };
+
+                    if (dailySales.some(sale => sale.amountPaid < sale.totalCost)) {
+                        dropdownButton.classList.add('warning-button');
+                    }
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.style.marginLeft = '10px';
+                    deleteButton.onclick = () => {
+                        const password = prompt('Enter password to delete:');
+                        if (password === 'admin123') {
+                            const section = document.getElementById(`section-${formattedDate}`);
+                            section.remove();
+                            sales = sales.filter(sale => formatDate(new Date(sale.date)) !== formattedDate);
+                            saveSales();
+                        } else {
+                            alert('Incorrect password');
+                        }
+                    };
+
+                    buttonContainer.appendChild(dropdownButton);
+                    buttonContainer.appendChild(deleteButton);
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.id = `content-${formattedDate}`;
+                    contentDiv.style.display = 'none';
+                    contentDiv.appendChild(salesTable);
+                    contentDiv.appendChild(debtorsTable);
+
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.id = `section-${formattedDate}`;
+                    sectionDiv.appendChild(buttonContainer);
+                    sectionDiv.appendChild(contentDiv);
+
+                    monthContentDiv.appendChild(sectionDiv);
+
+                    calculateTotalSalesForDate(formattedDate, dailySales);
+                    displaySalesSummary(formattedDate, dailySales);
+                }
+
+                monthDiv.appendChild(monthButton);
+                monthDiv.appendChild(monthContentDiv);
+                salesContainer.appendChild(monthDiv);
+            }
+        }
+
+        // Function to group sales by date
+        function groupSalesByDate(sales) {
+            return sales.reduce((acc, sale) => {
+                const date = sale.date;
+                if (!acc[date]) {
+                    acc[date] = [];
+                }
+                acc[date].push(sale);
+                return acc;
+            }, {});
+        }
+
+        // Function to create sales table
+        function createSalesTable(date, sales) {
+            const formattedDate = date.replace(/\//g, '-');
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Sales Order Number</th>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Cost (UGX)</th>
+                        <th>Amount Paid (UGX)</th>
+                        <th>Balance (UGX)</th>
+                        <th>Payment Method</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTableBody-${formattedDate}">
+                    ${sales.map((sale, index) => `
+                        <tr id="sale-${sale.salesOrderNumber}">
+                            <td>${sale.date}</td>
+                            <td>${sale.time}</td>
+                            <td>${sale.salesOrderNumber}</td>
+                            <td>${sale.products.map(product => product.name).join('<br>')}</td>
+                            <td>${sale.products.map(product => product.quantity).join('<br>')}</td>
+                            <td>${sale.products.map(product => `UGX ${product.price * product.quantity}`).join('<br>')}</td>
+                            <td>UGX ${sale.amountPaid}</td>
+                            <td>UGX ${sale.balance}</td>
+                            <td>${sale.paymentDetails}</td>
+                            <td><button onclick="deleteSale('${sale.salesOrderNumber}')">Delete</button></td>
+                        </tr>
+                    `).join('')}
+                    <tr>
+                        <td colspan="5"><strong>Total Sales (UGX):</strong></td>
+                        <td id="totalSalesAmount-${formattedDate}" class="total-sales-amount">0</td>
+                        <td colspan="4"></td>
+                    </tr>
+                </tbody>
+            `;
+            return table;
+        }
+
+        // Function to calculate total sales for date
+        function calculateTotalSalesForDate(date, sales) {
+            const formattedDate = date.replace(/\//g, '-');
+            const totalSales = sales.reduce((total, sale) => total + sale.amountPaid, 0);
+            console.log(`Total sales for ${date}: UGX ${totalSales}`);
+            const totalSalesElement = document.getElementById(`totalSalesAmount-${formattedDate}`);
+            if (totalSalesElement) {
+                totalSalesElement.textContent = `UGX ${totalSales}`;
+            } else {
+                console.error(`Element with ID totalSalesAmount-${formattedDate} not found`);
+            }
+        }
+
+        // Function to create debtors table
+        function createDebtorsTable(date, sales) {
+            const debtors = sales.filter(sale => sale.amountPaid < sale.totalCost);
+            if (debtors.length === 0) return document.createElement('div');
+
+            const container = document.createElement('div');
+            const title = document.createElement('h3');
+            title.textContent = `Debtors for ${formatDate(date)}`;
+            container.appendChild(title);
+
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Sales Order Number</th>
+                        <th>Debtor's Name</th>
+                        <th>Debtor's Contact</th>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Cost (UGX)</th>
+                        <th>Amount Paid (UGX)</th>
+                        <th>Amount Demanded (UGX)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${debtors.map((sale, index) => `
+                        <tr>
+                            <td>${formatDate(sale.date)}</td>
+                            <td>${sale.time}</td>
+                            <td>${sale.salesOrderNumber}</td>
+                            <td>${sale.debtorName}</td>
+                            <td>${sale.debtorContact}</td>
+                            <td>${sale.products.map(product => product.name).join('<br>')}</td>
+                            <td>${sale.products.map(product => product.quantity).join('<br>')}</td>
+                            <td>${sale.products.map(product => `UGX ${product.price * product.quantity}`).join('<br>')}</td>
+                            <td>UGX ${sale.amountPaid}</td>
+                            <td>UGX ${sale.totalCost - sale.amountPaid}</td>
+                            <td><button onclick="markAsPaid('${sale.salesOrderNumber}')">Paid</button></td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            container.appendChild(table);
+            return container;
+        }
+
+        function markAsPaid(salesOrderNumber) {
+            const sale = sales.find(sale => sale.salesOrderNumber === salesOrderNumber);
+            if (sale) {
+                const paymentMethod = prompt("Enter payment method for the remaining amount (cash, airtel, mtn, bank):");
+                if (paymentMethod && ['cash', 'airtel', 'mtn', 'bank'].includes(paymentMethod)) {
+                    const amountPaid = parseFloat(prompt("Enter the amount paid:"));
+                    if (!isNaN(amountPaid) && amountPaid > 0) {
+                        const remainingAmount = sale.totalCost - sale.amountPaid;
+                        if (amountPaid >= remainingAmount) {
+                            sale.amountPaid += remainingAmount;
+                            sale.balance = amountPaid - remainingAmount;
+                            sale.paymentMethod = paymentMethod;
+                            sale.paymentDetails = getPaymentDetails(paymentMethod);
+                            delete sale.debtorName;
+                            delete sale.debtorContact;
+                        } else {
+                            sale.amountPaid += amountPaid;
+                            sale.balance = sale.totalCost - sale.amountPaid;
+                            sale.paymentMethod = paymentMethod;
+                            sale.paymentDetails = getPaymentDetails(paymentMethod);
+                        }
+                        saveSales(); // Save sales to localStorage
+                        updateSalesTable();
+                        updateButtonColor(sale.date);
+                    } else {
+                        alert("Invalid amount. Please enter a valid number.");
+                    }
+                } else {
+                    alert("Invalid payment method. Please enter one of the following: cash, airtel_money, mtn_money, bank.");
+                }
+            }
+        }
+
+        function getPaymentDetails(paymentMethod) {
+            switch (paymentMethod) {
+                case 'cash':
+                    return 'Cash';
+                case 'airtel_money':
+                    return 'Airtel merchant code - 6345768';
+                case 'mtn_money':
+                    return 'MOMO Pay - 186508';
+                case 'bank':
+                    return 'Bank - Equity 1010xxxxxx450';
+                default:
+                    return '';
+            }
+        }
+
+        // Function to save sales to localStorage
+        function saveSales() {
+            localStorage.setItem('sales', JSON.stringify(sales));
+        }
+
+        // Function to delete a sale record
+        function deleteSale(salesOrderNumber) {
+            if (confirm('Are you sure you want to delete this record?')) {
+                const saleIndex = sales.findIndex(sale => sale.salesOrderNumber === salesOrderNumber);
+                if (saleIndex !== -1) {
+                    sales.splice(saleIndex, 1);
+                    saveSales(); // Save sales to localStorage
+                    updateSalesTable();
+                }
+            }
+        }
+
+        // Function to display summary of sales by payment method at the end of the day
+        function displaySalesSummary(date, sales) {
+            const formattedDate = date.replace(/\//g, '-');
+            const salesTableBody = document.getElementById(`salesTableBody-${formattedDate}`);
+            if (salesTableBody) {
+                const existingSummaryRows = salesTableBody.querySelectorAll('.summary-row');
+                existingSummaryRows.forEach(row => row.remove());
+
+                const existingSummaryTitle = salesTableBody.querySelector('.summary-title');
+                if (!existingSummaryTitle) {
+                    const summaryTitleElement = document.createElement('tr');
+                    summaryTitleElement.classList.add('summary-title');
+                    summaryTitleElement.innerHTML = `
+                        <td colspan="10"><strong>Sales Summary for ${formatDate(date)}:</strong></td>
+                    `;
+                    salesTableBody.appendChild(summaryTitleElement);
+                }
+
+                const paymentMethods = ['cash', 'airtel_money', 'mtn_money', 'bank'];
+                paymentMethods.forEach(method => {
+                    let total = 0;
+                    sales.forEach(sale => {
+                        if (sale.paymentMethod === method) {
+                            total += sale.amountPaid;
+                        }
+                    });
+
+                    const methodElement = document.createElement('tr');
+                    methodElement.classList.add('summary-row');
+                    methodElement.innerHTML = `
+                        <td colspan="5"><strong>${method.replace('_', ' ').toUpperCase()} Sales (UGX):</strong></td>
+                        <td>UGX ${total}</td>
+                        <td colspan="4"></td>
+                    `;
+                    salesTableBody.appendChild(methodElement);
+                });
+            }
+        }
+
+        // Load sales data when the page loads
+        window.onload = function() {
+            loadSales();
+            updateSalesTable();
+        };
+    </script>
+</head>
+<body>
+    <h2>Sales Summary</h2>
+    <nav>
+        <ul>
+            <li><a href="login.html">Admin</a></li>
+            <li><a href="vendor.html">Vendor</a></li>
+            <li><a href="product-tracking.html">Product Tracking</a></li>
+        </ul>
+    </nav>
+    <div id="salesContainer" class="table-container"></div>
+    <div id="debtorsContainer" class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                </tr>
+            </thead>
+            <tbody id="debtorsTableBody">
+                <!-- Debtors data will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+    <div id="receiptContainer" style="padding: 20px; background-color: #ecf0f1; border-top: 1px solid #bdc3c7; margin-top: 20px;"></div>
+    <script src="script.js"></script>
+</body>
+</html>
