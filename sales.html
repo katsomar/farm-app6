@@ -202,7 +202,7 @@
             return table;
         }
 
-        // Function to calculate total sales for date
+               // Function to calculate total sales for date
         function calculateTotalSalesForDate(date, sales) {
             const formattedDate = date.replace(/\//g, '-');
             const totalSales = sales.reduce((total, sale) => total + sale.amountPaid, 0);
@@ -316,6 +316,7 @@
         function saveSales() {
             localStorage.setItem('sales', JSON.stringify(sales));
         }
+        
 
         // Function to delete a sale record
         function deleteSale(salesOrderNumber) {
@@ -328,6 +329,7 @@
                 }
             }
         }
+
 
         // Function to display summary of sales by payment method at the end of the day
         function displaySalesSummary(date, sales) {
@@ -342,7 +344,7 @@
                     const summaryTitleElement = document.createElement('tr');
                     summaryTitleElement.classList.add('summary-title');
                     summaryTitleElement.innerHTML = `
-                        <td colspan="10"><strong>Sales Summary for ${formatDate(date)}:</strong></td>
+                        <td colspan="10"><strong>Sales Summary for ${date}:</strong></td>
                     `;
                     salesTableBody.appendChild(summaryTitleElement);
                 }
