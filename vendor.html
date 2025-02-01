@@ -5,16 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vendor Panel - FARMFAIR</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg); }
+        }
+        .wave-icon {
+            display: inline-block;
+            animation: wave 1s infinite;
+        }
+        @keyframes wobble {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .wobble-icon {
+            display: inline-block;
+        }
+        .icon-spacing {
+            margin-right: 8px;
+        }
+        #addToCartButton:hover .wobble-icon {
+            animation: wobble 1s infinite;
+        }
+        nav {
+            background-color: #2c3e50;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: #34495e;
+        }
+        .menu-icon {
+            display: none;
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+        }
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 1;
+        }
+        .side-menu a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #f1f5f6;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu a:hover {
+            background-color: #34495e;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 36px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                display: none;
+            }
+            .menu-icon {
+                display: block;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+            h2 {
+                margin-right: 40px; /* Adjust to align with the menu icon */
+            }
+        }
+    </style>
 </head>
 <body>
-    <h2>Vendor Panel</h2>
+    <h2><i class="fas fa-store"></i> Vendor Panel</h2>
+    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
     <nav>
         <ul>
-            <li><a href="login.html">Admin</a></li>
-            <li><a href="sales.html">Sales</a></li>
-            <li><a href="product-tracking.html">Product Tracking</a></li>
+            <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="login.html"><i class="fas fa-user-shield"></i> Admin</a></li>
+            <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+            <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
+            <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+            <li><a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a></li>
         </ul>
     </nav>
+    <div id="sideMenu" class="side-menu">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
+        <a href="index.html"><i class="fas fa-home"></i> Home</a>
+        <a href="login.html"><i class="fas fa-user-shield"></i> Admin</a>
+        <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+        <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
+        <a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a>
+        <li><a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a></li>
+    </div>
     <form id="vendorForm">
         <label for="productSelect">Select Product:</label>
         <select id="productSelect"></select>
@@ -24,7 +136,9 @@
         
         <input type="hidden" id="salesOrderNumber">
 
-        <button type="button" onclick="addToCart()">Add to Cart</button>
+        <button type="button" id="addToCartButton" onclick="addToCart()">
+            <i class="fas fa-shopping-cart icon-spacing wobble-icon" id="cartIcon"></i><span id="cartText"></span>
+        </button>
         <button type="button" onclick="clearCart()">Clear Cart</button>
     </form>
     <h3>Cart</h3>
@@ -41,6 +155,7 @@
     <div id="paymentDetails"></div>
     <label for="amountPaid">Amount Paid:</label>
     <input type="number" id="amountPaid" required>
+    <input type="number" id="companyAmount" name="companyAmount" required>
     <div id="debtorDetails" style="display: none;">
         <label for="debtorName">Debtor's Name:</label>
         <input type="text" id="debtorName">
@@ -48,11 +163,70 @@
         <input type="text" id="debtorContact">
         <button type="button" onclick="confirmDebtorDetails()">Done</button>
     </div>
-    <button type="button" onclick="confirmPayment()">Confirm Payment</button>
+    <button type="button" onclick="confirmPayment()">
+        <i class="fas fa-money-bill-wave wave-icon"></i> Confirm Payment
+    </button>
     <div id="receiptContainer" style="padding: 20px; background-color: #ecf0f1; border-top: 1px solid #bdc3c7; margin-top: 20px;"></div>
     <div id="demandingFormContainer" style="padding: 20px; background-color: #f8d7da; border-top: 1px solid #f5c6cb; margin-top: 20px;"></div>
     <button type="button" onclick="printReceipt()">Print Receipt</button>
     <button type="button" onclick="printDemandingForm()">Print Demanding Form</button>
     <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cartIcon = document.getElementById('cartIcon');
+            const cartText = document.getElementById('cartText');
+            const text = " Add to Cart";
+            let index = 0;
+
+            cartIcon.style.position = 'relative';
+            cartIcon.style.transition = 'left 1s linear';
+            cartIcon.style.left = '100%';
+
+            const interval = setInterval(() => {
+                if (index < text.length) {
+                    cartText.textContent += text[index];
+                    index++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 100);
+
+            setTimeout(() => {
+                cartIcon.style.left = '0';
+                cartIcon.classList.add('wobble-icon');
+                cartIcon.style.animation = 'wobble 1s infinite';
+            }, 1100); // 100ms delay + 1s transition
+        });
+
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+    <style>
+        footer {
+            position: static; /* Changed from fixed to static */
+            bottom: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+        footer a {
+            color: #ecf0f1;
+            margin-left: 10px;
+        }
+    </style>
 </body>
 </html>

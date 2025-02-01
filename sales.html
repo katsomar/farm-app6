@@ -5,15 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales - FARMFAIR</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         let sales = [];
+        let nextSalesOrderNumber = 1;
 
         // Load sales from localStorage
         function loadSales() {
             const savedSales = localStorage.getItem('sales');
             if (savedSales) {
                 sales = JSON.parse(savedSales);
+                if (sales.length > 0) {
+                    const maxOrderNumber = Math.max(...sales.map(sale => parseInt(sale.salesOrderNumber, 10)));
+                    nextSalesOrderNumber = maxOrderNumber + 1;
+                }
             }
+        }
+
+        // Function to generate the next sales order number
+        function generateSalesOrderNumber() {
+            return String(nextSalesOrderNumber++).padStart(5, '0');
+        }
+
+        // Function to add a new sale
+        function addSale(sale) {
+            sale.salesOrderNumber = generateSalesOrderNumber();
+            sales.push(sale);
+            saveSales();
+            updateSalesTable();
         }
 
         // Function to format date to DD/MM/YYYY
@@ -135,14 +155,21 @@
                     sectionDiv.appendChild(contentDiv);
 
                     monthContentDiv.appendChild(sectionDiv);
-
-                    calculateTotalSalesForDate(formattedDate, dailySales);
-                    displaySalesSummary(formattedDate, dailySales);
                 }
 
                 monthDiv.appendChild(monthButton);
                 monthDiv.appendChild(monthContentDiv);
                 salesContainer.appendChild(monthDiv);
+            }
+
+            // Calculate total sales and display summary for each date
+            for (const [month, monthlySales] of Object.entries(salesByMonth)) {
+                const salesByDate = groupSalesByDate(monthlySales);
+                for (const [date, dailySales] of Object.entries(salesByDate)) {
+                    const formattedDate = formatDate(date);
+                    calculateTotalSalesForDate(formattedDate, dailySales);
+                    displaySalesSummary(formattedDate, dailySales);
+                }
             }
         }
 
@@ -199,17 +226,25 @@
                     </tr>
                 </tbody>
             `;
+            const sendMailButton = document.createElement('button');
+            sendMailButton.textContent = 'send sales report';
+            sendMailButton.onclick = () => {
+                console.log(`Send Mail button clicked for date: ${formattedDate}`);
+                sendMail(formattedDate);
+            };
+            table.appendChild(sendMailButton);
             return table;
         }
 
         // Function to calculate total sales for date
-        function calculateTotalSalesForDate(date, sales) {
+        function calculateTotalSalesForDate(date, dailySales) {
             const formattedDate = date.replace(/\//g, '-');
-            const totalSales = sales.reduce((total, sale) => total + sale.amountPaid, 0);
+            const totalSales = dailySales.reduce((total, sale) => total + sale.amountPaid, 0);
             console.log(`Total sales for ${date}: UGX ${totalSales}`);
             const totalSalesElement = document.getElementById(`totalSalesAmount-${formattedDate}`);
             if (totalSalesElement) {
                 totalSalesElement.textContent = `UGX ${totalSales}`;
+                console.log(`Updated total sales element for ${formattedDate}`);
             } else {
                 console.error(`Element with ID totalSalesAmount-${formattedDate} not found`);
             }
@@ -330,7 +365,7 @@
         }
 
         // Function to display summary of sales by payment method at the end of the day
-        function displaySalesSummary(date, sales) {
+        function displaySalesSummary(date, dailySales) {
             const formattedDate = date.replace(/\//g, '-');
             const salesTableBody = document.getElementById(`salesTableBody-${formattedDate}`);
             if (salesTableBody) {
@@ -350,7 +385,7 @@
                 const paymentMethods = ['cash', 'airtel_money', 'mtn_money', 'bank'];
                 paymentMethods.forEach(method => {
                     let total = 0;
-                    sales.forEach(sale => {
+                    dailySales.forEach(sale => {
                         if (sale.paymentMethod === method) {
                             total += sale.amountPaid;
                         }
@@ -364,8 +399,48 @@
                         <td colspan="4"></td>
                     `;
                     salesTableBody.appendChild(methodElement);
+                    console.log(`Added summary row for ${method} with total UGX ${total}`);
                 });
+            } else {
+                console.error(`Sales table body for ${formattedDate} not found`);
             }
+        }
+
+        // Function to take a snapshot of the sales summary and provide sharing options
+        function sendMail(date) {
+            const formattedDate = date.replace(/\//g, '-');
+            const salesTableBody = document.getElementById(`salesTableBody-${formattedDate}`);
+            if (salesTableBody) {
+                console.log('Capturing sales summary...');
+                html2canvas(salesTableBody).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = `Sales_Summary_${formattedDate}.png`;
+                    link.click();
+
+                   
+                    salesTableBody.insertAdjacentHTML('afterend', shareOptions);
+                }).catch(error => {
+                    console.error('Error capturing the sales summary:', error);
+                });
+            } else {
+                console.error('Sales table body not found for date:', formattedDate);
+            }
+        }
+
+        // Function to share via WhatsApp
+        //function shareViaWhatsApp(imgData) {
+          //  const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(imgData)}`;
+            //window.open(url, '_blank');
+        //}
+
+        // Function to share via Email
+        function shareViaEmail(imgData) {
+            const subject = 'Sales Summary';
+            const body = 'Please find the attached sales summary.';
+            const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${encodeURIComponent(imgData)}`;
+            window.location.href = mailtoLink;
         }
 
         // Load sales data when the page loads
@@ -374,17 +449,133 @@
             updateSalesTable();
         };
     </script>
+    <style>
+        /* ...existing styles... */
+        nav {
+            background-color: #2c3e50;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: #34495e;
+        }
+        .menu-icon {
+            display: none;
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+        }
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 1;
+        }
+        .side-menu a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ecf0f1;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu a:hover {
+            background-color: #34495e;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 36px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                display: none;
+            }
+            .menu-icon {
+                display: block;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+            h2 {
+                margin-right: 40px; /* Adjust to align with the menu icon */
+            }
+        }
+    </style>
 </head>
 <body>
-    <h2>Sales Summary</h2>
+    <h2><i class="fas fa-money-bill-wave"></i> Sales Summary</h2>
+    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
     <nav>
         <ul>
-            <li><a href="login.html">Admin</a></li>
-            <li><a href="vendor.html">Vendor</a></li>
-            <li><a href="product-tracking.html">Product Tracking</a></li>
+            <li><a href="login.html"><i class="fas fa-user-shield"></i> Admin</a></li>
+            <li><a href="vendor.html"><i class="fas fa-home"></i> Vendor</a></li>
+            <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+            <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
+            <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
         </ul>
     </nav>
-    <div id="salesContainer" class="table-container"></div>
+    <div id="sideMenu" class="side-menu">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
+        <a href="login.html"><i class="fas fa-user-shield"></i> Admin</a>
+        <a href="vendor.html"><i class="fas fa-home"></i> Vendor</a>
+        <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+        <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
+        <a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a>
+    </div>
+    <script>
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
+    <div id="salesContainer" class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Sales Order Number</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Cost (UGX)</th>
+                    <th>Amount Paid (UGX)</th>
+                    <th>Balance (UGX)</th>
+                    <th>Payment Method</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="salesTableBody">
+                <!-- Sales data will be dynamically inserted here -->
+            </tbody>
+        </table>
+    </div>
     <div id="debtorsContainer" class="table-container">
         <table>
             <thead>
@@ -400,5 +591,28 @@
     </div>
     <div id="receiptContainer" style="padding: 20px; background-color: #ecf0f1; border-top: 1px solid #bdc3c7; margin-top: 20px;"></div>
     <script src="script.js"></script>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+    <style>
+        footer {
+            position: static; /* Changed from fixed to relative */
+            bottom: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+        footer a {
+            color: #ecf0f1;
+            margin-left: 10px;
+        }
+    </style>
 </body>
 </html>

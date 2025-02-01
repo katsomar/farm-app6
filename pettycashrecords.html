@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petty Cash Records - FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script>
+        let pettyCashRecords = [];
+        let monitoringRecords = [];
+
+        function loadPettyCashRecords() {
+            const savedRecords = localStorage.getItem('pettyCashRecords');
+            if (savedRecords) {
+                pettyCashRecords = JSON.parse(savedRecords);
+            }
+        }
+
+        function loadMonitoringRecords() {
+            const savedRecords = localStorage.getItem('monitoringRecords');
+            if (savedRecords) {
+                monitoringRecords = JSON.parse(savedRecords);
+            }
+        }
+
+        function updatePettyCashTables() {
+            const recordsContainer = document.getElementById('recordsContainer');
+            recordsContainer.innerHTML = '';
+
+            const groupedRecords = pettyCashRecords.reduce((acc, record) => {
+                const date = record.date;
+                const month = new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' });
+                if (!acc[month]) {
+                    acc[month] = {};
+                }
+                if (!acc[month][date]) {
+                    acc[month][date] = { individual: [], company: [] };
+                }
+                acc[month][date][record.category].push(record);
+                return acc;
+            }, {});
+
+            Object.keys(groupedRecords).forEach(month => {
+                const monthSection = document.createElement('div');
+                monthSection.classList.add('month-section');
+
+                const monthHeader = document.createElement('button');
+                monthHeader.classList.add('collapsible');
+                monthHeader.textContent = `Petty Cash Records for ${month}`;
+                monthHeader.onclick = function() {
+                    const content = document.getElementById(`content-${month}`);
+                    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                };
+                monthSection.appendChild(monthHeader);
+
+                const monthContent = document.createElement('div');
+                monthContent.classList.add('content');
+                monthContent.id = `content-${month}`;
+                monthContent.style.display = 'none';
+
+                Object.keys(groupedRecords[month]).forEach(date => {
+                    const dayRecords = groupedRecords[month][date];
+
+                    const daySection = document.createElement('div');
+                    daySection.classList.add('day-section');
+
+                    const dayHeader = document.createElement('button');
+                    dayHeader.classList.add('collapsible');
+                    dayHeader.textContent = `Petty Cash Records for ${date}`;
+                    dayHeader.onclick = function() {
+                        const content = document.getElementById(`content-${date.replace(/\//g, '-')}`);
+                        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                    };
+                    daySection.appendChild(dayHeader);
+
+                    const dayContent = document.createElement('div');
+                    dayContent.classList.add('content');
+                    dayContent.id = `content-${date.replace(/\//g, '-')}`;
+                    dayContent.style.display = 'none';
+
+                    const individualTitle = document.createElement('h4');
+                    individualTitle.textContent = `Records for Individual Use - ${date}`;
+                    dayContent.appendChild(individualTitle);
+
+                    const individualTable = createTable(dayRecords.individual, 'Individual Use');
+                    dayContent.appendChild(individualTable);
+
+                    const companyTitle = document.createElement('h4');
+                    companyTitle.textContent = `Records for Company Use - ${date}`;
+                    dayContent.appendChild(companyTitle);
+
+                    const companyTable = createTable(dayRecords.company, 'Company Use');
+                    dayContent.appendChild(companyTable);
+
+                    const monitoringTitle = document.createElement('h4');
+                    monitoringTitle.textContent = `Records for Monitoring - ${date}`;
+                    dayContent.appendChild(monitoringTitle);
+
+                    const monitoringTable = createMonitoringTable(date, dayRecords.individual, dayRecords.company);
+                    dayContent.appendChild(monitoringTable);
+
+                    daySection.appendChild(dayContent);
+                    monthContent.appendChild(daySection);
+                });
+
+                monthSection.appendChild(monthContent);
+                recordsContainer.appendChild(monthSection);
+            });
+        }
+
+        function createTable(records, title) {
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Purpose</th>
+                        <th>Amount</th>
+                        <th>Taken By</th>
+                        <th>Authorized By</th>
+                        ${title === 'Individual Use' ? '<th>Paid/Unpaid</th>' : ''}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${records.map(record => `
+                        <tr>
+                            <td>${record.date}</td>
+                            <td>${record.time}</td>
+                            <td>${record.purpose}</td>
+                            <td>${record.amount}</td>
+                            <td>${record.takenBy}</td>
+                            <td>${record.authorizedBy}</td>
+                            ${title === 'Individual Use' ? `<td>${record.paid ? 'Paid' : `<button class="blinking" onclick="togglePaidStatus(this)">Unpaid</button>`}</td>` : ''}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            return table;
+        }
+
+        function createMonitoringTable(date, individualRecords, companyRecords) {
+            const monitoringRecord = monitoringRecords.find(r => r.date === date);
+            const openingAmount = monitoringRecord ? monitoringRecord.openingAmount : 0;
+            const replenishment = monitoringRecord ? monitoringRecord.replenishment : 0;
+            const totalTaken = individualRecords.reduce((sum, record) => sum + record.amount, 0) + companyRecords.reduce((sum, record) => sum + record.amount, 0);
+            const currentValue = openingAmount - totalTaken + replenishment;
+            const closingAmount = currentValue;
+
+            console.log('Setting current value:', currentValue); // Debugging statement
+
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Opening Amount</th>
+                        <th>Total Amount Taken</th>
+                        <th>Replenishment</th>
+                        <th>Current Value</th>
+                        <th>Closing Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>${date}</td>
+                        <td>${openingAmount}</td>
+                        <td id="totalTaken">${totalTaken}</td>
+                        <td>${replenishment}</td>
+                        <td id="currentValue">${currentValue}</td> <!-- Ensure ID is correct and within a td element -->
+                        <td>${closingAmount}</td>
+                    </tr>
+                </tbody>
+            `;
+            return table;
+        }
+
+        function togglePaidStatus(button) {
+            const row = button.parentElement.parentElement;
+            const amount = parseFloat(row.cells[3].textContent);
+            const date = row.cells[0].textContent.replace(/\//g, '-');
+
+            if (button.textContent === 'Unpaid') {
+                button.textContent = 'Paid';
+                button.style.display = 'none'; // Hide the button
+                const paidText = document.createElement('span');
+                paidText.textContent = 'Paid';
+                row.cells[6].appendChild(paidText); // Show "Paid" text
+
+                // Update the record in pettyCashRecords
+                const record = pettyCashRecords.find(r => r.date === row.cells[0].textContent && r.time === row.cells[1].textContent);
+                if (record) {
+                    record.paid = true;
+                    localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords));
+                }
+
+                console.log(`Updating monitoring table for date ${date} with amount change ${-amount}`); // Debugging statement
+                updateMonitoringTable(date, -amount); // Reduce the amount in the monitoring table
+            }
+        }
+
+        function updateMonitoringTable(date, amountChange) {
+            const monitoringTable = document.querySelector(`#content-${date.replace(/\//g, '-')} table`);
+            if (!monitoringTable) {
+                console.error(`Monitoring table for date ${date} not found.`);
+                return;
+            }
+            const totalTakenCell = monitoringTable.querySelector('#totalTaken');
+            const currentValueCell = monitoringTable.querySelector('#currentValue');
+            if (!totalTakenCell || !currentValueCell) {
+                console.error(`Total Taken or Current Value cell not found for date ${date}.`);
+                return;
+            }
+            const totalTaken = parseFloat(totalTakenCell.textContent);
+            const currentValue = parseFloat(currentValueCell.textContent);
+
+            console.log(`Updating monitoring table for date ${date}: totalTaken=${totalTaken}, currentValue=${currentValue}, amountChange=${amountChange}`); // Debugging statement
+
+            totalTakenCell.textContent = (totalTaken + amountChange).toFixed(2);
+            currentValueCell.textContent = (currentValue + amountChange).toFixed(2);
+        }
+
+        window.onload = function() {
+            loadPettyCashRecords();
+            loadMonitoringRecords();
+            updatePettyCashTables();
+        };
+    </script>
+    <style>
+        /* ...existing styles... */
+        nav {
+            background-color: #2c3e50;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: #34495e;
+        }
+        .menu-icon {
+            display: none;
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+        }
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 1;
+        }
+        .side-menu a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ecf0f1;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu a:hover {
+            background-color: #34495e;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 36px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                display: none;
+            }
+            .menu-icon {
+                display: block;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+            h2 {
+                margin-right: 40px; /* Adjust to align with the menu icon */
+            }
+        }
+        footer {
+            position: static;
+            bottom: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+        footer a {
+            color: #ecf0f1;
+            margin-left: 10px;
+        }
+        .collapsible {
+            background-color: #2c3e50;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+        }
+        .collapsible:after {
+            content: '\002B';
+            color: white;
+            font-weight: bold;
+            float: right;
+            margin-left: 5px;
+        }
+        .collapsible.active:after {
+            content: "\2212";
+        }
+        .content {
+            padding: 0 18px;
+            display: none;
+            overflow: hidden;
+            background-color: #f1f1f1;
+        }
+        .blinking {
+            animation: blinkingBackground 1.5s infinite;
+            background-color: red;
+            color: white;
+        }
+
+        @keyframes blinkingBackground {
+            0% { background-color: red; }
+            50% { background-color: transparent; }
+            100% { background-color: red; }
+        }
+    </style>
+</head>
+<body>
+    <h2><i class="fas fa-money-bill-wave"></i> Petty Cash Records</h2>
+    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
+    <nav>
+        <ul>
+            <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="login.html"><i class="fas fa-user-shield"></i> Admin</a></li>
+            <li><a href="vendor.html"><i class="fas fa-home"></i> Vendor</a></li>
+            <li><a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a></li>
+            <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+            <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
+            <li><a href="pettycashrecords.html"><i class="fas fa-money-bill-wave"></i> Petty Cash Records</a></li>
+        </ul>
+    </nav>
+    <div id="sideMenu" class="side-menu">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
+        <a href="index.html"><i class="fas fa-home"></i> Home</a>
+        <a href="login.html"><i class="fas fa-user-shield"></i> Admin</a>
+        <a href="vendor.html"><i class="fas fa-home"></i> Vendor</a>
+        <a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a>
+        <a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a>
+        <a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a>
+        <a href="pettycashrecords.html"><i class="fas fa-money-bill-wave"></i> Petty Cash Records</a>
+    </div>
+    <script>
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
+    <div id="recordsContainer"></div>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+</body>
+</html>

@@ -1,4 +1,4 @@
-let products = []; 
+let products = [];
 let cart = [];
 let sales = [];
 let editIndex = -1;
@@ -379,11 +379,11 @@ function updateCart() {
 
 // Load products from localStorage
 function loadProducts() {
-    const savedProducts = localStorage.getItem('products');
-    if (savedProducts) {
-        products = JSON.parse(savedProducts);
+    const storedProducts = localStorage.getItem('products');
+    if (storedProducts) {
+        products = JSON.parse(storedProducts);
+        updateProductList();
     }
-    updateProductList(); // Ensure the product list is updated after loading products
 }
 
 // Save products to localStorage
@@ -393,9 +393,9 @@ function saveProducts() {
 
 // Load sales from localStorage
 function loadSales() {
-    const savedSales = localStorage.getItem('sales');
-    if (savedSales) {
-        sales = JSON.parse(savedSales);
+    const storedSales = localStorage.getItem('sales');
+    if (storedSales) {
+        sales = JSON.parse(storedSales);
     }
 }
 
@@ -591,3 +591,35 @@ function replenishProduct(index) {
     saveProducts(); // Save products to localStorage
     saveTrackingData(); // Save tracking data to localStorage
 }
+
+function createNewTrackingTable() {
+    // Define the logic for creating a new tracking table
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Tracking ID</th>
+                <th>Product Name</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="trackingTableBody">
+            <!-- Tracking data will be inserted here -->
+        </tbody>
+    `;
+    return table;
+}
+
+function toggleCompanyAmountRequired(isRequired) {
+    const companyAmountInput = document.getElementById('companyAmount');
+    if (isRequired) {
+        companyAmountInput.setAttribute('required', 'required');
+    } else {
+        companyAmountInput.removeAttribute('required');
+    }
+}
+
+// Example usage: Call this function based on some condition
+toggleCompanyAmountRequired(true); // or false

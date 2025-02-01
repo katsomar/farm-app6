@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petty Cash - FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script>
+        let pettyCashRecords = [];
+        let monitoringRecords = [];
+
+        function recordPettyCash() {
+            const category = document.getElementById('category').value;
+            let purpose = '';
+            let amount = 0;
+
+            if (category === 'individual') {
+                purpose = document.getElementById('individualPurpose').value;
+                amount = parseFloat(document.getElementById('individualAmount').value);
+            } else if (category === 'company') {
+                const options = document.getElementById('companyPurpose').value;
+                if (options === 'other') {
+                    purpose = document.getElementById('otherPurpose').value;
+                } else {
+                    purpose = options;
+                }
+                amount = parseFloat(document.getElementById('companyAmount').value);
+            }
+
+            const record = {
+                date: new Date().toLocaleDateString(),
+                time: new Date().toLocaleTimeString(),
+                category,
+                purpose,
+                amount,
+                takenBy: category === 'individual' ? document.getElementById('individualTakenBy').value : document.getElementById('companyTakenBy').value,
+                authorizedBy: category === 'individual' ? document.getElementById('individualAuthorizedBy').value : document.getElementById('companyAuthorizedBy').value,
+                paid: false
+            };
+
+            pettyCashRecords.push(record);
+            savePettyCashRecords();
+            alert('Information recorded');
+            window.location.href = 'pettycashrecords.html'; // Redirect to pettycashrecords.html
+        }
+
+        function savePettyCashRecords() {
+            localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords));
+        }
+
+        function loadPettyCashRecords() {
+            const savedRecords = localStorage.getItem('pettyCashRecords');
+            if (savedRecords) {
+                pettyCashRecords = JSON.parse(savedRecords);
+            }
+        }
+
+        function updatePettyCashTable() {
+            const tableBody = document.getElementById('pettyCashTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = pettyCashRecords.map(record => `
+                    <tr>
+                        <td>${record.date}</td>
+                        <td>${record.time}</td>
+                        <td>${record.purpose}</td>
+                        <td>${record.amount}</td>
+                        <td>${record.takenBy}</td>
+                        <td>${record.authorizedBy}</td>
+                        <td><button onclick="togglePaidStatus(this)">${record.paid ? 'Paid' : 'Unpaid'}</button></td>
+                    </tr>
+                `).join('');
+            } else {
+                console.error('Element with ID pettyCashTableBody not found');
+            }
+        }
+
+        function toggleFields() {
+            const category = document.getElementById('category').value;
+            const individualFields = document.querySelectorAll('#individualFields input');
+            const companyFields = document.querySelectorAll('#companyFields input, #companyFields select');
+
+            if (category === 'individual') {
+                document.getElementById('individualFields').style.display = 'block';
+                document.getElementById('companyFields').style.display = 'none';
+                individualFields.forEach(field => field.required = true);
+                companyFields.forEach(field => field.required = false);
+            } else if (category === 'company') {
+                document.getElementById('individualFields').style.display = 'none';
+                document.getElementById('companyFields').style.display = 'block';
+                individualFields.forEach(field => field.required = false);
+                companyFields.forEach(field => field.required = true);
+            }
+            document.getElementById('otherPurposeField').style.display = 'none';
+        }
+
+        function toggleOtherPurposeField() {
+            const companyPurpose = document.getElementById('companyPurpose').value;
+            document.getElementById('otherPurposeField').style.display = companyPurpose === 'other' ? 'block' : 'none';
+        }
+
+        function recordMonitoring() {
+            const openingAmount = parseFloat(document.getElementById('openingAmount').value);
+            const amountTaken = calculateTotalAmountTaken();
+            const currentAmount = openingAmount - amountTaken;
+
+            const record = {
+                date: new Date().toLocaleDateString(),
+                openingAmount,
+                amountAvailable: currentAmount,
+                replenishment: 0,
+                totalUsed: amountTaken,
+                currentAmount,
+                closingAmount: currentAmount
+            };
+            monitoringRecords.push(record);
+            saveMonitoringRecords();
+            updateMonitoringTable();
+        }
+
+        function calculateTotalAmountTaken() {
+            return pettyCashRecords.reduce((total, record) => total + record.amount, 0);
+        }
+
+        function saveMonitoringRecords() {
+            localStorage.setItem('monitoringRecords', JSON.stringify(monitoringRecords));
+        }
+
+        function loadMonitoringRecords() {
+            const savedRecords = localStorage.getItem('monitoringRecords');
+            if (savedRecords) {
+                monitoringRecords = JSON.parse(savedRecords);
+            }
+        }
+
+        function updateMonitoringTable() {
+            const tableBody = document.getElementById('monitoringTableBody');
+            if (monitoringRecords.length > 0) {
+                const latestRecord = monitoringRecords[monitoringRecords.length - 1];
+                const currentValue = latestRecord.currentAmount;
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td>${latestRecord.openingAmount}</td>
+                        <td>${currentValue}</td>
+                        <td>
+                            <button onclick="editMonitoringRecord('${latestRecord.date}')">Edit</button>
+                            <button onclick="replenishMonitoringRecord('${latestRecord.date}')">Replenish</button>
+                            <button onclick="deleteMonitoringRecord('${latestRecord.date}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="3">No records available</td></tr>';
+            }
+        }
+
+        function editMonitoringRecord(date) {
+            const record = monitoringRecords.find(r => r.date === date);
+            if (record) {
+                document.getElementById('openingAmount').value = record.openingAmount;
+                // Additional fields can be added here if needed
+            }
+        }
+
+        function replenishMonitoringRecord(date) {
+            const amount = parseFloat(prompt('Enter replenishment amount:'));
+            const record = monitoringRecords.find(r => r.date === date);
+            if (record && !isNaN(amount)) {
+                record.replenishment += amount;
+                record.currentAmount = record.openingAmount + record.replenishment - record.totalUsed;
+                record.amountAvailable = record.currentAmount;
+                record.closingAmount = record.currentAmount;
+                saveMonitoringRecords();
+                updateMonitoringTable();
+            }
+        }
+
+        function deleteMonitoringRecord(date) {
+            monitoringRecords = monitoringRecords.filter(r => r.date !== date);
+            saveMonitoringRecords();
+            updateMonitoringTable();
+        }
+
+        window.onload = function() {
+            loadPettyCashRecords();
+            updatePettyCashTable();
+            loadMonitoringRecords();
+            updateMonitoringTable();
+            toggleFields();
+            updateAmountAvailable(); // Update the amount available on load
+        };
+
+        function updateAmountAvailable() {
+            const savedRecords = localStorage.getItem('monitoringRecords');
+            if (savedRecords) {
+                const monitoringRecords = JSON.parse(savedRecords);
+                if (monitoringRecords.length > 0) {
+                    const latestRecord = monitoringRecords[monitoringRecords.length - 1];
+                    document.getElementById('monitoringTableBody').innerHTML = `
+                        <tr>
+                            <td>${latestRecord.openingAmount}</td>
+                            <td>${latestRecord.currentAmount}</td>
+                            <td>
+                                <button onclick="editMonitoringRecord('${latestRecord.date}')">Edit</button>
+                                <button onclick="replenishMonitoringRecord('${latestRecord.date}')">Replenish</button>
+                                <button onclick="deleteMonitoringRecord('${latestRecord.date}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ...existing styles... */
+        nav {
+            background-color: #2c3e50;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: #34495e;
+        }
+        .menu-icon {
+            display: none;
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+        }
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 1;
+        }
+        .side-menu a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ecf0f1;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu a:hover {
+            background-color: #34495e;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 36px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                display: none;
+            }
+            .menu-icon {
+                display: block;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+            h2 {
+                margin-right: 40px; /* Adjust to align with the menu icon */
+            }
+        }
+        footer {
+            position: static; /* Changed from fixed to static */
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+        footer a {
+            color: #ecf0f1;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2><i class="fas fa-money-bill-wave"></i> Petty Cash</h2>
+    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
+    <nav>
+        <ul>
+            <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="login.html"><i class="fas fa-user-shield"></i> Admin</a></li>
+            <li><a href="vendor.html"><i class="fas fa-home"></i> Vendor</a></li>
+            <li><a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a></li>
+            <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+            <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
+            <li><a href="pettycashrecords.html"><i class="fas fa-money-bill-wave"></i> Petty Cash Records</a></li>
+        </ul>
+    </nav>
+    <div id="sideMenu" class="side-menu">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
+        <a href="index.html"><i class="fas fa-home"></i> Home</a>
+        <a href="login.html"><i class="fas fa-user-shield"></i> Admin</a>
+        <a href="vendor.html"><i class="fas fa-home"></i> Vendor</a>
+        <a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a>
+        <a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a>
+        <a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a>
+        <a href="pettycashrecords.html"><i class="fas fa-money-bill-wave"></i> Petty Cash Records</a>
+    </div>
+    <script>
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
+    <div>
+        <h3>Select an option</h3>
+        <form onsubmit="recordPettyCash(); return false;">
+            <label for="category">Category:</label>
+            <select id="category" name="category" onchange="toggleFields()" required>
+                <option value="">Select...</option>
+                <option value="individual">Individual Use</option>
+                <option value="company">Company Use</option>
+            </select>
+
+            <div id="individualFields" style="display:none;">
+                <label for="individualPurpose">Purpose:</label>
+                <input type="text" id="individualPurpose" name="individualPurpose" required>
+                <label for="individualAmount">Amount:</label>
+                <input type="number" id="individualAmount" name="individualAmount" required>
+                <label for="individualTakenBy">Taken By:</label>
+                <input type="text" id="individualTakenBy" name="individualTakenBy" required>
+                <label for="individualAuthorizedBy">Authorized By:</label>
+                <input type="text" id="individualAuthorizedBy" name="individualAuthorizedBy" required>
+            </div>
+
+            <div id="companyFields" style="display:none;">
+                <label for="companyPurpose">Purpose:</label>
+                <select id="companyPurpose" name="companyPurpose" onchange="toggleOtherPurposeField()" required>
+                    <option value="">Select...</option>
+                    <option value="Fuel">Fuel</option>
+                    <option value="Medicine">Medicine</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Labour">Labour</option>
+                    <option value="Allowance">Allowance</option>
+                    <option value="other">Other</option>
+                </select>
+                <div id="otherPurposeField" style="display:none;">
+                    <label for="otherPurpose">Enter Purpose:</label>
+                    <input type="text" id="otherPurpose" name="otherPurpose">
+                </div>
+                <label for="companyAmount">Amount:</label>
+                <input type="number" id="companyAmount" name="companyAmount" required>
+                <label for="companyTakenBy">Taken By:</label>
+                <input type="text" id="companyTakenBy" name="companyTakenBy" required>
+                <label for="companyAuthorizedBy">Authorized By:</label>
+                <input type="text" id="companyAuthorizedBy" name="companyAuthorizedBy" required>
+            </div>
+
+            <button type="submit">Record</button>
+        </form>
+    </div>
+    <div>
+        <h3>Monitoring Form</h3>
+        <form onsubmit="recordMonitoring(); return false;">
+            <label for="openingAmount">Opening Amount:</label>
+            <input type="number" id="openingAmount" name="openingAmount" required>
+            <button type="submit">Record</button>
+        </form>
+    </div>
+    <div>
+        <h3>Monitoring Table</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Opening Amount</th>
+                    <th>Current Value</th> <!-- Changed column name -->
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="monitoringTableBody"></tbody>
+        </table>
+    </div>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+</body>
+</html>

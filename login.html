@@ -5,10 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - FARMFAIR</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        @keyframes lock {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(15deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .lock-icon {
+            display: inline-block;
+            animation: lock 1s infinite;
+        }
+    </style>
 </head>
 <body>
     <div id="loginContainer">
-        <h2>Admin Login</h2>
+        <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
         <form id="loginForm">
             <label for="username">Username:</label>
             <input type="text" id="username" required>
@@ -18,6 +30,9 @@
             
             <button type="button" onclick="login()">Login</button>
         </form>
+        <div style="text-align: center; margin-top: 20px;">
+            <i class="fas fa-lock lock-icon" style="font-size: 24px;"></i>
+        </div>
     </div>
     <script>
         function login() {
@@ -32,5 +47,28 @@
             }
         }
     </script>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+    <style>
+        footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+        footer a {
+            color: #ecf0f1;
+            margin-left: 10px;
+        }
+    </style>
 </body>
 </html>
