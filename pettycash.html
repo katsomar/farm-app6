@@ -211,6 +211,37 @@
                 }
             }
         }
+
+        function saveMonitoringRecord() {
+            const date = new Date().toLocaleDateString();
+            const openingAmount = parseFloat(document.getElementById('openingAmount').value);
+            const replenishment = 0;
+
+            const monitoringRecord = {
+                date,
+                openingAmount,
+                replenishment
+            };
+
+            let monitoringRecords = JSON.parse(localStorage.getItem('monitoringRecords')) || [];
+            const existingRecordIndex = monitoringRecords.findIndex(record => record.date === date);
+
+            if (existingRecordIndex !== -1) {
+                monitoringRecords[existingRecordIndex] = monitoringRecord;
+            } else {
+                monitoringRecords.push(monitoringRecord);
+            }
+
+            localStorage.setItem('monitoringRecords', JSON.stringify(monitoringRecords));
+
+            // Update the monitoring table in pettycash.html
+            updateMonitoringTable();
+
+            // Update the monitoring table in pettycashrecords.html
+            if (window.opener && typeof window.opener.updateMonitoringTableInRecordsPage === 'function') {
+                window.opener.updateMonitoringTableInRecordsPage(date, openingAmount, replenishment);
+            }
+        }
     </script>
     <style>
         /* ...existing styles... */
@@ -395,8 +426,8 @@
         <table>
             <thead>
                 <tr>
-                    <th>Opening Amount</th>
-                    <th>Current Value</th> <!-- Changed column name -->
+                    <th>Opening Value</th>
+                    <th>Current Value</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -410,5 +441,94 @@
             </a>
         </p>
     </footer>
+    <script>
+        // ...existing code...
+        function recordMonitoring() {
+            const openingAmount = parseFloat(document.getElementById('openingAmount').value);
+            const amountTaken = calculateTotalAmountTaken();
+            const currentAmount = openingAmount - amountTaken;
+
+            const record = {
+                date: new Date().toLocaleDateString(),
+                openingAmount,
+                amountAvailable: currentAmount,
+                replenishment: 0,
+                totalUsed: amountTaken,
+                currentAmount,
+                closingAmount: currentAmount
+            };
+            monitoringRecords.push(record);
+            saveMonitoringRecords();
+            updateMonitoringTable();
+        }
+
+        function updateMonitoringTable() {
+            const tableBody = document.getElementById('monitoringTableBody');
+            if (monitoringRecords.length > 0) {
+                const latestRecord = monitoringRecords[monitoringRecords.length - 1];
+                const currentValue = latestRecord.currentAmount;
+
+                tableBody.innerHTML = `
+                    <tr>
+                        <td>${latestRecord.openingAmount}</td>
+                        <td>${currentValue}</td>
+                        <td>
+                            <button onclick="editMonitoringRecord('${latestRecord.date}')">Edit</button>
+                            <button onclick="replenishMonitoringRecord('${latestRecord.date}')">Replenish</button>
+                            <button onclick="deleteMonitoringRecord('${latestRecord.date}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="3">No records available</td></tr>';
+            }
+        }
+
+        function replenishMonitoringRecord(date) {
+            const amount = parseFloat(prompt('Enter replenishment amount:'));
+            const record = monitoringRecords.find(r => r.date === date);
+            if (record && !isNaN(amount)) {
+                record.replenishment += amount;
+                record.currentAmount = record.openingAmount + record.replenishment - record.totalUsed;
+                record.amountAvailable = record.currentAmount;
+                record.closingAmount = record.currentAmount;
+                saveMonitoringRecords();
+                updateMonitoringTable();
+            }
+        }
+
+        // ...existing code...
+
+        function saveMonitoringRecord() {
+            const date = new Date().toLocaleDateString();
+            const openingAmount = parseFloat(document.getElementById('openingAmount').value);
+            const replenishment = 0;
+
+            const monitoringRecord = {
+                date,
+                openingAmount,
+                replenishment
+            };
+
+            let monitoringRecords = JSON.parse(localStorage.getItem('monitoringRecords')) || [];
+            const existingRecordIndex = monitoringRecords.findIndex(record => record.date === date);
+
+            if (existingRecordIndex !== -1) {
+                monitoringRecords[existingRecordIndex] = monitoringRecord;
+            } else {
+                monitoringRecords.push(monitoringRecord);
+            }
+
+            localStorage.setItem('monitoringRecords', JSON.stringify(monitoringRecords));
+
+            // Update the monitoring table in pettycash.html
+            updateMonitoringTable();
+
+            // Update the monitoring table in pettycashrecords.html
+            if (window.opener && typeof window.opener.updateMonitoringTableInRecordsPage === 'function') {
+                window.opener.updateMonitoringTableInRecordsPage(date, openingAmount, replenishment);
+            }
+        }
+    </script>
 </body>
 </html>

@@ -120,7 +120,7 @@
                         <th>Amount</th>
                         <th>Taken By</th>
                         <th>Authorized By</th>
-                        ${title === 'Individual Use' ? '<th>Paid/Unpaid</th>' : ''}
+                        ${title === 'Individual Use' ? '<th>Action</th>' : ''}
                     </tr>
                 </thead>
                 <tbody>
@@ -132,7 +132,7 @@
                             <td>${record.amount}</td>
                             <td>${record.takenBy}</td>
                             <td>${record.authorizedBy}</td>
-                            ${title === 'Individual Use' ? `<td>${record.paid ? 'Paid' : `<button class="blinking" onclick="togglePaidStatus(this)">Unpaid</button>`}</td>` : ''}
+                            ${title === 'Individual Use' ? `<td><button class="blinking" onclick="togglePaidStatus(this, ${record.amount})">Unpaid</button></td>` : ''}
                         </tr>
                     `).join('')}
                 </tbody>
@@ -166,9 +166,9 @@
                     <tr>
                         <td>${date}</td>
                         <td>${openingAmount}</td>
-                        <td id="totalTaken">${totalTaken}</td>
+                        <td class="totalTaken">${totalTaken}</td>
                         <td>${replenishment}</td>
-                        <td id="currentValue">${currentValue}</td> <!-- Ensure ID is correct and within a td element -->
+                        <td class="currentValue">${currentValue}</td>
                         <td>${closingAmount}</td>
                     </tr>
                 </tbody>
@@ -176,27 +176,30 @@
             return table;
         }
 
-        function togglePaidStatus(button) {
+        function togglePaidStatus(button, amount) {
             const row = button.parentElement.parentElement;
-            const amount = parseFloat(row.cells[3].textContent);
-            const date = row.cells[0].textContent.replace(/\//g, '-');
+            const date = row.cells[0].textContent;
+            const paidAmount = parseFloat(prompt('Enter amount paid:'));
 
-            if (button.textContent === 'Unpaid') {
-                button.textContent = 'Paid';
-                button.style.display = 'none'; // Hide the button
-                const paidText = document.createElement('span');
-                paidText.textContent = 'Paid';
-                row.cells[6].appendChild(paidText); // Show "Paid" text
-
-                // Update the record in pettyCashRecords
-                const record = pettyCashRecords.find(r => r.date === row.cells[0].textContent && r.time === row.cells[1].textContent);
-                if (record) {
-                    record.paid = true;
+            if (paidAmount >= amount) {
+                const recordIndex = pettyCashRecords.findIndex(record => record.date === date && record.amount === amount);
+                if (recordIndex !== -1) {
+                    pettyCashRecords.splice(recordIndex, 1);
                     localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords));
                 }
-
-                console.log(`Updating monitoring table for date ${date} with amount change ${-amount}`); // Debugging statement
-                updateMonitoringTable(date, -amount); // Reduce the amount in the monitoring table
+                row.remove();
+                updateMonitoringTable(date, -amount);
+            } else if (paidAmount > 0) {
+                row.cells[3].textContent = (amount - paidAmount).toFixed(2);
+                const record = pettyCashRecords.find(record => record.date === date && record.amount === amount);
+                if (record) {
+                    record.amount = amount - paidAmount;
+                    localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords));
+                }
+                updateMonitoringTable(date, -paidAmount);
+                button.onclick = function() {
+                    togglePaidStatus(button, amount - paidAmount);
+                };
             }
         }
 
@@ -206,8 +209,8 @@
                 console.error(`Monitoring table for date ${date} not found.`);
                 return;
             }
-            const totalTakenCell = monitoringTable.querySelector('#totalTaken');
-            const currentValueCell = monitoringTable.querySelector('#currentValue');
+            const totalTakenCell = monitoringTable.querySelector('.totalTaken');
+            const currentValueCell = monitoringTable.querySelector('.currentValue');
             if (!totalTakenCell || !currentValueCell) {
                 console.error(`Total Taken or Current Value cell not found for date ${date}.`);
                 return;
@@ -219,6 +222,34 @@
 
             totalTakenCell.textContent = (totalTaken + amountChange).toFixed(2);
             currentValueCell.textContent = (currentValue + amountChange).toFixed(2);
+
+            // Update the monitoring table in pettycash.html
+            const monitoringTableBody = document.querySelector('#monitoringTableBody');
+            if (monitoringTableBody) {
+                const currentValueCellInPettyCash = monitoringTableBody.querySelector('td:nth-child(2)');
+                if (currentValueCellInPettyCash) {
+                    currentValueCellInPettyCash.textContent = (currentValue + amountChange).toFixed(2);
+                }
+            }
+        }
+
+        function updateMonitoringTableInRecordsPage(date, openingAmount, replenishment) {
+            const monitoringRecord = {
+                date,
+                openingAmount,
+                replenishment
+            };
+
+            const existingRecordIndex = monitoringRecords.findIndex(record => record.date === date);
+
+            if (existingRecordIndex !== -1) {
+                monitoringRecords[existingRecordIndex] = monitoringRecord;
+            } else {
+                monitoringRecords.push(monitoringRecord);
+            }
+
+            localStorage.setItem('monitoringRecords', JSON.stringify(monitoringRecords));
+            updatePettyCashTables();
         }
 
         window.onload = function() {
