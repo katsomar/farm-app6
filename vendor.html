@@ -103,9 +103,38 @@
                 margin-right: 40px; /* Adjust to align with the menu icon */
             }
         }
+               /* Greeting message styles */
+               #greetingMessage {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                font-size: 24px; /* Increase the font size */
+                color: #2c3e50;
+                font-weight: bold; /* Make the text bold */
+                font-family: 'Brush Script MT', cursive; /* Ensure the font is set to a cursive style */
+                animation: hoverGlow 6s infinite alternate; /* Change the animation duration to 6 seconds */
+                animation: hoverGlow 6s infinite alternate, hoverMove 2s infinite alternate; /* Add hoverMove animation */
+            }
+            @keyframes hoverGlow {
+                0% {
+                    text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(157, 242, 247), 0 0 3px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 5px rgb(157, 242, 247), 0 0 6px rgb(157, 242, 247); /* Glow effect with border */
+                }
+                100% {
+                    text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(182, 250, 157), 0 0 3px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 5px rgb(182, 250, 157), 0 0 6px rgb(182, 250, 157); /* Glow effect with border */
+                }
+            }
+            @keyframes hoverMove {
+                0% {
+                    transform: translateY(0);
+                }
+                100% {
+                    transform: translateY(-10px);
+                }
+            }
     </style>
 </head>
 <body>
+    <div id="greetingMessage" style="position: absolute; top: 24px; left: 10px; font-size: 24px; color: #2c3e50;"></div>
     <h2><i class="fas fa-store"></i> Vendor Panel</h2>
     <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
     <nav>
@@ -155,7 +184,6 @@
     <div id="paymentDetails"></div>
     <label for="amountPaid">Amount Paid:</label>
     <input type="number" id="amountPaid" required>
-    <input type="number" id="companyAmount" name="companyAmount" required>
     <div id="debtorDetails" style="display: none;">
         <label for="debtorName">Debtor's Name:</label>
         <input type="text" id="debtorName">
@@ -173,6 +201,7 @@
     <script src="script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            displayGreeting();
             const cartIcon = document.getElementById('cartIcon');
             const cartText = document.getElementById('cartText');
             const text = " Add to Cart";
@@ -204,6 +233,41 @@
         function closeMenu() {
             document.getElementById("sideMenu").style.display = "none";
         }
+    </script>
+    <script>
+        function displayGreeting() {
+            const now = new Date();
+            const hours = now.getHours();
+            let greeting;
+            let icon;
+
+            if (hours < 12) {
+                greeting = "Good Morning";
+                icon = '<i class="fas fa-sun"></i>';
+            } else if (hours < 18) {
+                greeting = "Good Afternoon";
+                icon = '<i class="fas fa-cloud-sun"></i>';
+            } else if (hours < 21) {
+                greeting = "Good Evening";
+                icon = '<i class="fas fa-sunset"></i>';
+            } else {
+                greeting = "Good Night";
+                icon = '<i class="fas fa-moon"></i>';
+            }
+
+            const greetingMessage = document.getElementById('greetingMessage');
+            greetingMessage.innerHTML = greeting;
+
+            setTimeout(() => {
+                greetingMessage.innerHTML = `${now.toLocaleTimeString()} ${icon}`;
+            }, 30000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            displayGreeting();
+            setInterval(displayGreeting, 60000); // Update greeting and time every minute
+            // ...existing code...
+        });
     </script>
     <footer>
         <p>&copy; Farmfair powered by Omblo technologies 

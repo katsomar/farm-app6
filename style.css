@@ -382,3 +382,24 @@ footer a {
     color: #ecf0f1;
     margin-left: 10px;
 }
+
+/* Greeting message styles */
+#greeting {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    animation: hoverEffect 2s infinite, glowEffect 2m infinite alternate;
+}
+
+@keyframes hoverEffect {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0); }
+}
+
+@keyframes glowEffect {
+    0% { text-shadow: 0 0 20px lightblue; }
+    100% { text-shadow: 0 0 20px lightgreen; }
+}
