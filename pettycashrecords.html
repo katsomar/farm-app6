@@ -185,7 +185,7 @@
                 const recordIndex = pettyCashRecords.findIndex(record => record.date === date && record.amount === amount);
                 if (recordIndex !== -1) {
                     pettyCashRecords.splice(recordIndex, 1);
-                    localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords));
+                    localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords)); // Save changes to localStorage
                 }
                 row.remove();
                 updateMonitoringTable(date, -amount);
@@ -194,7 +194,7 @@
                 const record = pettyCashRecords.find(record => record.date === date && record.amount === amount);
                 if (record) {
                     record.amount = amount - paidAmount;
-                    localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords));
+                    localStorage.setItem('pettyCashRecords', JSON.stringify(pettyCashRecords)); // Save changes to localStorage
                 }
                 updateMonitoringTable(date, -paidAmount);
                 button.onclick = function() {
@@ -230,6 +230,14 @@
                 if (currentValueCellInPettyCash) {
                     currentValueCellInPettyCash.textContent = (currentValue + amountChange).toFixed(2);
                 }
+            }
+
+            // Save the updated monitoring records to localStorage
+            const monitoringRecord = monitoringRecords.find(r => r.date === date);
+            if (monitoringRecord) {
+                monitoringRecord.totalTaken = parseFloat(totalTakenCell.textContent);
+                monitoringRecord.currentValue = parseFloat(currentValueCell.textContent);
+                localStorage.setItem('monitoringRecords', JSON.stringify(monitoringRecords));
             }
         }
 

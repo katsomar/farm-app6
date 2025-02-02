@@ -90,13 +90,16 @@
                 document.getElementById('companyFields').style.display = 'block';
                 individualFields.forEach(field => field.required = false);
                 companyFields.forEach(field => field.required = true);
+                document.getElementById('otherPurpose').required = document.getElementById('companyPurpose').value === 'other';
             }
             document.getElementById('otherPurposeField').style.display = 'none';
         }
 
         function toggleOtherPurposeField() {
             const companyPurpose = document.getElementById('companyPurpose').value;
-            document.getElementById('otherPurposeField').style.display = companyPurpose === 'other' ? 'block' : 'none';
+            const otherPurposeField = document.getElementById('otherPurposeField');
+            otherPurposeField.style.display = companyPurpose === 'other' ? 'block' : 'none';
+            document.getElementById('otherPurpose').required = companyPurpose === 'other';
         }
 
         function recordMonitoring() {
