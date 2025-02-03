@@ -224,7 +224,7 @@
             currentValueCell.textContent = (currentValue + amountChange).toFixed(2);
 
             // Update the monitoring table in pettycash.html
-            const monitoringTableBody = document.querySelector('#monitoringTableBody');
+            const monitoringTableBody = window.opener.document.querySelector('#monitoringTableBody');
             if (monitoringTableBody) {
                 const currentValueCellInPettyCash = monitoringTableBody.querySelector('td:nth-child(2)');
                 if (currentValueCellInPettyCash) {
@@ -237,6 +237,7 @@
             if (monitoringRecord) {
                 monitoringRecord.totalTaken = parseFloat(totalTakenCell.textContent);
                 monitoringRecord.currentValue = parseFloat(currentValueCell.textContent);
+                monitoringRecord.closingAmount = parseFloat(currentValueCell.textContent); // Ensure closing amount is updated
                 localStorage.setItem('monitoringRecords', JSON.stringify(monitoringRecords));
             }
         }
