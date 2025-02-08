@@ -9,6 +9,7 @@
     <script>
         let pettyCashRecords = [];
         let monitoringRecords = [];
+        let comments = {};
 
         function loadPettyCashRecords() {
             const savedRecords = localStorage.getItem('pettyCashRecords');
@@ -22,6 +23,134 @@
             if (savedRecords) {
                 monitoringRecords = JSON.parse(savedRecords);
             }
+        }
+
+        function loadComments() {
+            const savedComments = localStorage.getItem('comments');
+            if (savedComments) {
+                comments = JSON.parse(savedComments);
+            }
+        }
+
+        function saveComments(formattedDate) {
+            const commentSection = document.querySelector(`.comment-section[data-date="${formattedDate}"]`);
+            const commentElements = commentSection.querySelectorAll('.comment p');
+            comments[formattedDate] = Array.from(commentElements).map(commentElement => commentElement.textContent.split('. ')[1]);
+            localStorage.setItem('comments', JSON.stringify(comments));
+        }
+
+        function createCommentSection(formattedDate) {
+            const commentSection = document.createElement('div');
+            commentSection.classList.add('comment-section');
+            commentSection.setAttribute('data-date', formattedDate);
+
+            const commentHeader = document.createElement('h4');
+            commentHeader.textContent = `Comment Section for ${formattedDate.replace(/-/g, '/')}`;
+            commentSection.appendChild(commentHeader);
+
+            const addCommentButton = document.createElement('button');
+            addCommentButton.textContent = 'Add Comment';
+            addCommentButton.classList.add('short-button');
+            addCommentButton.onclick = () => {
+                commentInput.style.display = 'block';
+                okayButton.style.display = 'inline-block';
+                addCommentButton.style.display = 'none';
+            };
+            commentSection.appendChild(addCommentButton);
+
+            const commentInput = document.createElement('textarea');
+            commentInput.placeholder = 'What would you like to document?';
+            commentInput.style.display = 'none';
+            commentInput.oninput = () => {
+                if (commentInput.value.trim()) {
+                    okayButton.style.display = 'inline-block';
+                } else {
+                    okayButton.style.display = 'none';
+                }
+            };
+            commentSection.appendChild(commentInput);
+
+            const okayButton = document.createElement('button');
+            okayButton.textContent = 'Okay';
+            okayButton.classList.add('short-button');
+            okayButton.style.display = 'none';
+            okayButton.style.marginLeft = '10px';
+            okayButton.onclick = () => {
+                const commentText = commentInput.value.trim();
+                if (commentText) {
+                    const comment = document.createElement('div');
+                    comment.classList.add('comment');
+                    const commentTextElement = document.createElement('p');
+                    commentTextElement.textContent = `${commentSection.querySelectorAll('.comment').length + 1}. ${commentText}`;
+                    comment.appendChild(commentTextElement);
+
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.classList.add('short-button');
+                    editButton.onclick = () => {
+                        commentInput.value = commentText;
+                        commentInput.style.display = 'block';
+                        okayButton.style.display = 'inline-block';
+                        addCommentButton.style.display = 'none';
+                        comment.remove();
+                    };
+                    comment.appendChild(editButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.classList.add('short-button');
+                    deleteButton.onclick = () => {
+                        comment.remove();
+                        saveComments(formattedDate);
+                    };
+                    comment.appendChild(deleteButton);
+
+                    commentSection.appendChild(comment);
+                    commentInput.value = '';
+                    commentInput.style.display = 'none';
+                    okayButton.style.display = 'none';
+                    addCommentButton.style.display = 'inline-block';
+
+                    saveComments(formattedDate);
+                }
+            };
+            commentSection.appendChild(okayButton);
+
+            // Load existing comments
+            if (comments[formattedDate]) {
+                comments[formattedDate].forEach((commentText, index) => {
+                    const comment = document.createElement('div');
+                    comment.classList.add('comment');
+                    const commentTextElement = document.createElement('p');
+                    commentTextElement.textContent = `${index + 1}. ${commentText}`;
+                    comment.appendChild(commentTextElement);
+
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.classList.add('short-button');
+                    editButton.onclick = () => {
+                        commentInput.value = commentText;
+                        commentInput.style.display = 'block';
+                        okayButton.style.display = 'inline-block';
+                        addCommentButton.style.display = 'none';
+                        comment.remove();
+                    };
+                    comment.appendChild(editButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.classList.add('short-button');
+                    deleteButton.onclick = () => {
+                        comment.remove();
+                        saveComments(formattedDate);
+                    };
+                    comment.appendChild(deleteButton);
+
+                    commentSection.appendChild(comment);
+                });
+            }
+
+            return commentSection;
         }
 
         function updatePettyCashTables() {
@@ -99,6 +228,10 @@
 
                     const monitoringTable = createMonitoringTable(date, dayRecords.individual, dayRecords.company);
                     dayContent.appendChild(monitoringTable);
+
+                    // Add comment section
+                    const commentSection = createCommentSection(date.replace(/\//g, '-'));
+                    dayContent.appendChild(commentSection);
 
                     daySection.appendChild(dayContent);
                     monthContent.appendChild(daySection);
@@ -267,6 +400,7 @@
             displayGreeting();
             loadPettyCashRecords();
             loadMonitoringRecords();
+            loadComments();
             updatePettyCashTables();
         };
     </script>
@@ -425,6 +559,29 @@
                     transform: translateY(-10px);
                 }
             }
+            .comment-section button {
+        font-size: small;
+        padding: 5px;
+    }
+    .comment-section textarea {
+        width: 80%;
+        display: inline-block;
+    }
+    .comment-section .comment {
+        display: flex;
+        align-items: center;
+    }
+    .comment-section .comment p {
+        flex: 1;
+    }
+    .comment-section .comment button {
+        margin-left: 10px;
+    }
+    .short-button {
+        width: auto;
+        padding: 5px 10px;
+        font-size: small;
+    }
     </style>
 </head>
 <body>

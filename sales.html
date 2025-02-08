@@ -10,8 +10,9 @@
     <script>
         let sales = [];
         let nextSalesOrderNumber = 1;
+        let comments = {};
 
-        // Load sales from localStorage
+        // Load sales and comments from localStorage
         function loadSales() {
             const savedSales = localStorage.getItem('sales');
             if (savedSales) {
@@ -21,6 +22,17 @@
                     nextSalesOrderNumber = maxOrderNumber + 1;
                 }
             }
+
+            const savedComments = localStorage.getItem('comments');
+            if (savedComments) {
+                comments = JSON.parse(savedComments);
+            }
+        }
+
+        // Function to save sales and comments to localStorage
+        function saveSales() {
+            localStorage.setItem('sales', JSON.stringify(sales));
+            localStorage.setItem('comments', JSON.stringify(comments));
         }
 
         // Function to generate the next sales order number
@@ -233,6 +245,7 @@
                 sendMail(formattedDate);
             };
             table.appendChild(sendMailButton);
+
             return table;
         }
 
@@ -253,49 +266,55 @@
         // Function to create debtors table
         function createDebtorsTable(date, sales) {
             const debtors = sales.filter(sale => sale.amountPaid < sale.totalCost);
-            if (debtors.length === 0) return document.createElement('div');
-
             const container = document.createElement('div');
-            const title = document.createElement('h3');
-            title.textContent = `Debtors for ${formatDate(date)}`;
-            container.appendChild(title);
 
-            const table = document.createElement('table');
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Sales Order Number</th>
-                        <th>Debtor's Name</th>
-                        <th>Debtor's Contact</th>
-                        <th>Product Name</th>
-                        <th>Quantity</th>
-                        <th>Cost (UGX)</th>
-                        <th>Amount Paid (UGX)</th>
-                        <th>Amount Demanded (UGX)</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${debtors.map((sale, index) => `
+            if (debtors.length > 0) {
+                const title = document.createElement('h3');
+                title.textContent = `Debtors for ${formatDate(date)}`;
+                container.appendChild(title);
+
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
                         <tr>
-                            <td>${formatDate(sale.date)}</td>
-                            <td>${sale.time}</td>
-                            <td>${sale.salesOrderNumber}</td>
-                            <td>${sale.debtorName}</td>
-                            <td>${sale.debtorContact}</td>
-                            <td>${sale.products.map(product => product.name).join('<br>')}</td>
-                            <td>${sale.products.map(product => product.quantity).join('<br>')}</td>
-                            <td>${sale.products.map(product => `UGX ${product.price * product.quantity}`).join('<br>')}</td>
-                            <td>UGX ${sale.amountPaid}</td>
-                            <td>UGX ${sale.totalCost - sale.amountPaid}</td>
-                            <td><button onclick="markAsPaid('${sale.salesOrderNumber}')">Paid</button></td>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Sales Order Number</th>
+                            <th>Debtor's Name</th>
+                            <th>Debtor's Contact</th>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Cost (UGX)</th>
+                            <th>Amount Paid (UGX)</th>
+                            <th>Amount Demanded (UGX)</th>
+                            <th>Action</th>
                         </tr>
-                    `).join('')}
-                </tbody>
-            `;
-            container.appendChild(table);
+                    </thead>
+                    <tbody>
+                        ${debtors.map((sale, index) => `
+                            <tr>
+                                <td>${formatDate(sale.date)}</td>
+                                <td>${sale.time}</td>
+                                <td>${sale.salesOrderNumber}</td>
+                                <td>${sale.debtorName}</td>
+                                <td>${sale.debtorContact}</td>
+                                <td>${sale.products.map(product => product.name).join('<br>')}</td>
+                                <td>${sale.products.map(product => product.quantity).join('<br>')}</td>
+                                <td>${sale.products.map(product => `UGX ${product.price * product.quantity}`).join('<br>')}</td>
+                                <td>UGX ${sale.amountPaid}</td>
+                                <td>UGX ${sale.totalCost - sale.amountPaid}</td>
+                                <td><button onclick="markAsPaid('${sale.salesOrderNumber}')">Paid</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                container.appendChild(table);
+            }
+
+            // Add comment section
+            const commentSection = createCommentSection(date.replace(/\//g, '-'));
+            container.appendChild(commentSection);
+
             return container;
         }
 
@@ -345,11 +364,6 @@
                 default:
                     return '';
             }
-        }
-
-        // Function to save sales to localStorage
-        function saveSales() {
-            localStorage.setItem('sales', JSON.stringify(sales));
         }
 
         // Function to delete a sale record
@@ -441,6 +455,129 @@
             const body = 'Please find the attached sales summary.';
             const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&attachment=${encodeURIComponent(imgData)}`;
             window.location.href = mailtoLink;
+        }
+
+        // Function to create comment section
+        function createCommentSection(formattedDate) {
+            const commentSection = document.createElement('div');
+            commentSection.classList.add('comment-section');
+            commentSection.setAttribute('data-date', formattedDate);
+
+            const commentHeader = document.createElement('h4');
+            commentHeader.textContent = `Comment Section for ${formattedDate.replace(/-/g, '/')}`;
+            commentSection.appendChild(commentHeader);
+
+            const addCommentButton = document.createElement('button');
+            addCommentButton.textContent = 'Add Comment';
+            addCommentButton.classList.add('short-button');
+            addCommentButton.onclick = () => {
+                commentInput.style.display = 'block';
+                okayButton.style.display = 'inline-block';
+                addCommentButton.style.display = 'none';
+            };
+            commentSection.appendChild(addCommentButton);
+
+            const commentInput = document.createElement('textarea');
+            commentInput.placeholder = 'What would you like to document?';
+            commentInput.style.display = 'none';
+            commentInput.oninput = () => {
+                if (commentInput.value.trim()) {
+                    okayButton.style.display = 'inline-block';
+                } else {
+                    okayButton.style.display = 'none';
+                }
+            };
+            commentSection.appendChild(commentInput);
+
+            const okayButton = document.createElement('button');
+            okayButton.textContent = 'Okay';
+            okayButton.classList.add('short-button');
+            okayButton.style.display = 'none';
+            okayButton.style.marginLeft = '10px';
+            okayButton.onclick = () => {
+                const commentText = commentInput.value.trim();
+                if (commentText) {
+                    const comment = document.createElement('div');
+                    comment.classList.add('comment');
+                    const commentTextElement = document.createElement('p');
+                    commentTextElement.textContent = `${commentSection.querySelectorAll('.comment').length + 1}. ${commentText}`;
+                    comment.appendChild(commentTextElement);
+
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.classList.add('short-button');
+                    editButton.onclick = () => {
+                        commentInput.value = commentText;
+                        commentInput.style.display = 'block';
+                        okayButton.style.display = 'inline-block';
+                        addCommentButton.style.display = 'none';
+                        comment.remove();
+                    };
+                    comment.appendChild(editButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.classList.add('short-button');
+                    deleteButton.onclick = () => {
+                        comment.remove();
+                        saveComments(formattedDate);
+                    };
+                    comment.appendChild(deleteButton);
+
+                    commentSection.appendChild(comment);
+                    commentInput.value = '';
+                    commentInput.style.display = 'none';
+                    okayButton.style.display = 'none';
+                    addCommentButton.style.display = 'inline-block';
+
+                    saveComments(formattedDate);
+                }
+            };
+            commentSection.appendChild(okayButton);
+
+            // Load existing comments
+            if (comments[formattedDate]) {
+                comments[formattedDate].forEach((commentText, index) => {
+                    const comment = document.createElement('div');
+                    comment.classList.add('comment');
+                    const commentTextElement = document.createElement('p');
+                    commentTextElement.textContent = `${index + 1}. ${commentText}`;
+                    comment.appendChild(commentTextElement);
+
+                    const editButton = document.createElement('button');
+                    editButton.textContent = 'Edit';
+                    editButton.classList.add('short-button');
+                    editButton.onclick = () => {
+                        commentInput.value = commentText;
+                        commentInput.style.display = 'block';
+                        okayButton.style.display = 'inline-block';
+                        addCommentButton.style.display = 'none';
+                        comment.remove();
+                    };
+                    comment.appendChild(editButton);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.classList.add('short-button');
+                    deleteButton.onclick = () => {
+                        comment.remove();
+                        saveComments(formattedDate);
+                    };
+                    comment.appendChild(deleteButton);
+
+                    commentSection.appendChild(comment);
+                });
+            }
+
+            return commentSection;
+        }
+
+        // Function to save comments to localStorage
+        function saveComments(formattedDate) {
+            const commentSection = document.querySelector(`.comment-section[data-date="${formattedDate}"]`);
+            const commentElements = commentSection.querySelectorAll('.comment p');
+            comments[formattedDate] = Array.from(commentElements).map(commentElement => commentElement.textContent.split('. ')[1]);
+            localStorage.setItem('comments', JSON.stringify(comments));
         }
 
         // Load sales data when the page loads
@@ -553,6 +690,29 @@
             100% {
                 transform: translateY(-10px);
             }
+        }
+        .comment-section button {
+            font-size: small;
+            padding: 5px;
+        }
+        .comment-section textarea {
+            width: 80%;
+            display: inline-block;
+        }
+        .comment-section .comment {
+            display: flex;
+            align-items: center;
+        }
+        .comment-section .comment p {
+            flex: 1;
+        }
+        .comment-section .comment button {
+            margin-left: 10px;
+        }
+        .short-button {
+            width: auto;
+            padding: 5px 10px;
+            font-size: small;
         }
     </style>
 </head>
