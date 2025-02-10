@@ -25,7 +25,7 @@ function addProduct() {
             price: unitPrice,
             openingStock: parseInt(openingStock, 10),
             quantity: parseInt(openingStock, 10), // Set initial quantity equal to opening stock
-            replenishments: [],
+            replenishments: [], // Initialize replenishments array
             totalSales: 0
         };
 
@@ -53,7 +53,7 @@ function updateProductList() {
     if (productList) {
         productList.innerHTML = '';
         products.forEach((product, index) => {
-            const totalReplenishments = product.replenishments.reduce((a, b) => a + b.quantity, 0);
+            const totalReplenishments = (product.replenishments || []).reduce((a, b) => a + b.quantity, 0);
             const initialQuantity = product.openingStock + totalReplenishments; // Initial quantity based on opening stock and replenishments
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -582,7 +582,7 @@ function replenishProduct(index) {
     const quantity = parseInt(prompt('Enter quantity to replenish:'), 10);
     if (!isNaN(quantity) && quantity > 0) {
         products[index].quantity += quantity;
-        products[index].replenishments.push({ quantity });
+        products[index].replenishmentsB.push({ quantity });
         updateProductList();
         saveProducts();
     } else {

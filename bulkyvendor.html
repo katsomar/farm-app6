@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Vendor panel- FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg); }
+        }
+        .wave-icon {
+            display: inline-block;
+            animation: wave 1s infinite;
+        }
+        @keyframes wobble {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .wobble-icon {
+            display: inline-block;
+        }
+        .icon-spacing {
+            margin-right: 8px;
+        }
+        #addToCartButton:hover .wobble-icon {
+            animation: wobble 1s infinite;
+        }
+        nav {
+            background-color: #2c3e50;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: #34495e;
+        }
+        .menu-icon {
+            display: none;
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+        }
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 1;
+        }
+        .side-menu a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #f1f5f6;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu a:hover {
+            background-color: #34495e;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 36px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                display: none;
+            }
+            .menu-icon {
+                display: block;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+            h2 {
+                margin-right: 40px; /* Adjust to align with the menu icon */
+            }
+            #sideMenu #greetingMessage {
+                display: block;
+                position: relative;
+                top: 10px;
+                left: 10px;
+                font-size: 24px;
+                color: #ecf0f1;
+                font-weight: bold;
+                font-family: 'Brush Script MT', cursive;
+                animation: hoverGlow 6s infinite alternate, hoverMove 2s infinite alternate;
+            }
+        }
+               /* Greeting message styles */
+               #greetingMessage {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                font-size: 24px; /* Increase the font size */
+                color: #2c3e50;
+                font-weight: bold; /* Make the text bold */
+                font-family: 'Brush Script MT', cursive; /* Ensure the font is set to a cursive style */
+                animation: hoverGlow 6s infinite alternate; /* Change the animation duration to 6 seconds */
+                animation: hoverGlow 6s infinite alternate, hoverMove 2s infinite alternate; /* Add hoverMove animation */
+            }
+            @keyframes hoverGlow {
+                0% {
+                    text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(157, 242, 247), 0 0 3px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 5px rgb(157, 242, 247), 0 0 6px rgb(157, 242, 247); /* Glow effect with border */
+                }
+                100% {
+                    text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(182, 250, 157), 0 0 3px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 5px rgb(182, 250, 157), 0 0 6px rgb(182, 250, 157); /* Glow effect with border */
+                }
+            }
+            @keyframes hoverMove {
+                0% {
+                    transform: translateY(0);
+                }
+                100% {
+                    transform: translateY(-10px);
+                }
+            }
+    </style>
+    <script>
+    let productsB = [];
+    let cartB = [];
+    let salesB = [];
+    let nextSalesOrderNumberB = 1; // Initialize the sales order number
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProductsB();
+        updateProductListB();
+        updateCartB();
+        displayGreeting();
+        setInterval(displayGreeting, 60000);
+    });
+
+    // Load products from localStorage
+    function loadProductsB() {
+        const storedProductsB = localStorage.getItem('productsB');
+        if (storedProductsB) {
+            productsB = JSON.parse(storedProductsB);
+            updateProductListB();
+        }
+
+        const savedSalesB = localStorage.getItem('salesB');
+        if (savedSalesB) {
+            salesB = JSON.parse(savedSalesB);
+            if (salesB.length > 0) {
+                const maxOrderNumber = Math.max(...salesB.map(saleB => parseInt(saleB.salesOrderNumberB, 10)));
+                nextSalesOrderNumberB = maxOrderNumber + 1;
+            }
+        }
+    }
+
+    // Function to generate the next sales order number
+    function generateSalesOrderNumberB() {
+        return String(nextSalesOrderNumberB++).padStart(5, '0');
+    }
+
+    // Update the product list in the vendor form
+    function updateProductListB() {
+        const productSelectB = document.getElementById('productSelectB');
+        if (productSelectB) {
+            productSelectB.innerHTML = '';
+            productsB.forEach((productB, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${productB.name} - UGX ${productB.price} (Qty: ${productB.quantity})`;
+                productSelectB.appendChild(option);
+            });
+        }
+    }
+
+    // Add product to the cart
+    function addToCartB() {
+        const productIndexB = document.getElementById('productSelectB').value;
+        const quantityB = parseInt(document.getElementById('quantityB').value, 10);
+
+        if (productIndexB !== '' && !isNaN(quantityB) && quantityB > 0) {
+            const productB = productsB[productIndexB];
+            if (productB.quantity >= quantityB) {
+                cartB.push({
+                    name: productB.name,
+                    price: productB.price,
+                    quantity: quantityB
+                });
+                productB.quantity -= quantityB;
+                updateCartB();
+                updateProductListB();
+                saveProductsB();
+            } else {
+                alert('Insufficient stock');
+            }
+        } else {
+            alert('Please select a product and enter a valid quantity');
+        }
+    }
+
+    // Update the cart list and total cost
+    function updateCartB() {
+        const cartListB = document.getElementById('cartListB');
+        cartListB.innerHTML = '';
+
+        let totalCostB = 0;
+
+        cartB.forEach((item) => {
+            const liB = document.createElement('li');
+            liB.textContent = `${item.name} - UGX ${item.price} x ${item.quantity}`;
+            cartListB.appendChild(liB);
+            totalCostB += item.price * item.quantity;
+        });
+
+        document.getElementById('totalCostB').textContent = totalCostB;
+    }
+
+    // Save products to localStorage
+    function saveProductsB() {
+        localStorage.setItem('productsB', JSON.stringify(productsB));
+    }
+
+    // Update payment details based on selected payment method
+    function updatePaymentDetailsB() {
+        const paymentMethodB = document.getElementById('paymentMethodB').value;
+        const paymentDetailsB = document.getElementById('paymentDetailsB');
+        let detailsB = '';
+
+        switch (paymentMethodB) {
+            case 'airtel_money':
+                detailsB = 'Pay to Airtel merchant code- 6345768';
+                break;
+            case 'mtn_money':
+                detailsB = 'Pay to MOMO - 186508';
+                break;
+            case 'bank':
+                detailsB = 'Pay to Bank - Equity 1010xxxxxx450';
+                break;
+            default:
+                detailsB = '';
+                break;
+        }
+
+        paymentDetailsB.textContent = detailsB;
+    }
+
+    // Confirm payment and generate receipt or demanding form
+    function confirmPaymentB() {
+        const paymentMethodB = document.getElementById('paymentMethodB').value;
+        const amountPaidB = parseFloat(document.getElementById('amountPaidB').value);
+        const totalCostB = parseFloat(document.getElementById('totalCostB').textContent);
+        const balanceB = amountPaidB - totalCostB;
+        const customerNameB = document.getElementById('customerNameB').value;
+        const sellingFarmB = document.getElementById('sellingFarmB').value;
+        let paymentDetailsB = '';
+
+        switch (paymentMethodB) {
+            case 'cash':
+                paymentDetailsB = `Cash`;
+                break;
+            case 'airtel_money':
+                paymentDetailsB = `Airtel merchant code- 6345768`;
+                break;
+            case 'mtn_money':
+                paymentDetailsB = `MOMO - 186508`;
+                break;
+            case 'bank':
+                paymentDetailsB = `Bank - Equity 1010xxxxxx450`;
+                break;
+        }
+
+        const saleB = {
+            salesOrderNumberB: generateSalesOrderNumberB(), // Generate sales order number
+            date: new Date().toLocaleDateString(),
+            time: new Date().toLocaleTimeString(),
+            products: [...cartB],
+            totalCost: totalCostB,
+            amountPaid: amountPaidB,
+            balance: balanceB,
+            paymentMethod: paymentMethodB,
+            paymentDetails: paymentDetailsB,
+            customerName: customerNameB,
+            sellingFarm: sellingFarmB
+        };
+
+        if (amountPaidB < totalCostB) {
+            document.getElementById('debtorDetailsB').style.display = 'block';
+            return;
+        } else {
+            generateReceiptB(saleB);
+        }
+
+        salesB.push(saleB);
+        saveSalesB();
+
+        cartB.forEach(cartItemB => {
+            const productB = productsB.find(p => p.name === cartItemB.name);
+            if (productB) {
+                productB.totalSales = (productB.totalSales || 0) + cartItemB.quantity;
+            }
+        });
+
+        cartB = [];
+        updateCartB();
+        updateProductListB();
+        saveSalesB();
+        saveProductsB();
+    }
+
+    // Confirm debtor details and generate demanding form
+    function confirmDebtorDetailsB() {
+        const debtorContactB = document.getElementById('debtorContactB').value;
+        const amountPaidB = parseFloat(document.getElementById('amountPaidB').value);
+        const totalCostB = parseFloat(document.getElementById('totalCostB').textContent);
+        const balanceB = amountPaidB - totalCostB;
+        const paymentMethodB = document.getElementById('paymentMethodB').value;
+        const paymentDetailsB = document.getElementById('paymentDetailsB').textContent;
+        const customerNameB = document.getElementById('customerNameB').value;
+        const sellingFarmB = document.getElementById('sellingFarmB').value;
+
+        const saleB = {
+            salesOrderNumberB: generateSalesOrderNumberB(), // Generate sales order number
+            date: new Date().toLocaleDateString(),
+            time: new Date().toLocaleTimeString(),
+            products: [...cartB],
+            totalCost: totalCostB,
+            amountPaid: amountPaidB,
+            balance: balanceB,
+            paymentMethod: paymentMethodB,
+            paymentDetails: paymentDetailsB,
+            debtorContact: debtorContactB,
+            customerName: customerNameB, // Use customer's name for debtor's name
+            sellingFarm: sellingFarmB
+        };
+
+        generateDemandingFormB(saleB);
+
+        salesB.push(saleB);
+        saveSalesB();
+
+        cartB = [];
+        updateCartB();
+        document.getElementById('debtorDetailsB').style.display = 'none';
+        saveSalesB();
+        saveProductsB();
+    }
+
+    // Generate receipt
+    function generateReceiptB(saleB) {
+        let receiptB = `
+            <div class="receipt">
+                <h2>Receipt</h2>
+                <p><strong>Sales Order Number:</strong> ${saleB.salesOrderNumberB}</p>
+                <p><strong>Customer's Name:</strong> ${saleB.customerName}</p>
+                <p><strong>Selling Farm:</strong> ${saleB.sellingFarm}</p>
+                <p><strong>Total Cost:</strong> UGX ${saleB.totalCost}</p>
+                <p><strong>Balance:</strong> UGX ${saleB.balance}</p>
+                <p><strong>Payment Method:</strong> ${saleB.paymentDetails}</p>
+                <h3>Products:</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        saleB.products.forEach(item => {
+            receiptB += `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td>UGX ${item.price}</td>
+                            <td>${item.quantity}</td>
+                            <td>UGX ${item.price * item.quantity}</td>
+                        </tr>`;
+        });
+        receiptB += `
+                    </tbody>
+                </table>
+            </div>`;
+
+        const receiptContainerB = document.getElementById('receiptContainerB');
+        receiptContainerB.innerHTML = receiptB;
+    }
+
+    // Generate demanding form
+    function generateDemandingFormB(saleB) {
+        const amountDemandedB = saleB.totalCost - saleB.amountPaid;
+        let demandingFormB = `
+            <div class="demanding-form">
+                <h2>Demanding Form</h2>
+                <p><strong>Sales Order Number:</strong> ${saleB.salesOrderNumberB}</p>
+                <p><strong>Customer's Name:</strong> ${saleB.customerName}</p>
+                <p><strong>Selling Farm:</strong> ${saleB.sellingFarm}</p>
+                <p><strong>Debtor's Contact:</strong> ${saleB.debtorContact}</p>
+                <p><strong>Total Cost:</strong> UGX ${saleB.totalCost}</p>
+                <p><strong>Amount Paid:</strong> UGX ${saleB.amountPaid}</p>
+                <p><strong>Amount Demanded:</strong> UGX ${amountDemandedB}</p>
+                <h3>Products:</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        saleB.products.forEach(item => {
+            demandingFormB += `
+                        <tr>
+                            <td>${item.name}</td>
+                            <td>UGX ${item.price}</td>
+                            <td>${item.quantity}</td>
+                            <td>UGX ${item.price * item.quantity}</td>
+                        </tr>`;
+        });
+        demandingFormB += `
+                    </tbody>
+                </table>
+            </div>`;
+
+        const demandingFormContainerB = document.getElementById('demandingFormContainerB');
+        demandingFormContainerB.innerHTML = demandingFormB;
+    }
+
+    // Print demanding form
+    function printDemandingFormB() {
+        const demandingFormContentB = document.getElementById('demandingFormContainerB').innerHTML;
+        const originalContentB = document.body.innerHTML;
+
+        document.body.innerHTML = demandingFormContentB;
+        window.print();
+        document.body.innerHTML = originalContentB;
+        window.location.reload();
+    }
+
+    // Print receipt
+    function printReceiptB() {
+        const receiptContentB = document.getElementById('receiptContainerB').innerHTML;
+        const originalContentB = document.body.innerHTML;
+
+        document.body.innerHTML = receiptContentB;
+        window.print();
+        document.body.innerHTML = originalContentB;
+        window.location.reload();
+    }
+
+    // Save sales to localStorage
+    function saveSalesB() {
+        localStorage.setItem('salesB', JSON.stringify(salesB));
+    }
+
+    // Display greeting message
+    function displayGreeting() {
+        const now = new Date();
+        const hours = now.getHours();
+        let greeting;
+        let icon;
+
+        if (hours < 12) {
+            greeting = "Good Morning";
+            icon = '<i class="fas fa-sun"></i>';
+        } else if (hours < 18) {
+            greeting = "Good Afternoon";
+            icon = '<i class="fas fa-cloud-sun"></i>';
+        } else if (hours < 21) {
+            greeting = "Good Evening";
+            icon = '<i class="fas fa-sunset"></i>';
+        } else {
+            greeting = "Good Night";
+            icon = '<i class="fas fa-moon"></i>';
+        }
+
+        const greetingMessage = document.getElementById('greetingMessage');
+        greetingMessage.innerHTML = greeting;
+
+        setTimeout(() => {
+            greetingMessage.innerHTML = `${now.toLocaleTimeString()} ${icon}`;
+        }, 30000);
+    }
+
+    function openMenu() {
+        document.getElementById("sideMenu").style.display = "block";
+    }
+
+    function closeMenu() {
+        document.getElementById("sideMenu").style.display = "none";
+    }
+</script>
+</head>
+<body>
+    <div id="greetingMessage" style="position: absolute; top: 24px; left: 10px; font-size: 24px; color: #2c3e50;"></div>
+    <h2><i class="fas fa-store"></i> Bulk Vendor Panel</h2>
+    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
+    <nav>
+        <ul>
+            <li><a class="nav-button" href="bulkyadmin.html"><i class="fas fa-home"></i> Bulky hand panel</a></li>
+            <li><a href="bulkysales.html"><i class="fas fa-money-bill-wave"></i> Bulky sales</a></li>
+        </ul>
+    </nav>
+    <div id="sideMenu" class="side-menu">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
+        <li><a class="nav-button" href="bulkyadmin.html"><i class="fas fa-home"></i> Bulky hand panel</a></li>
+        <li><a href="bulkysales.html"><i class="fas fa-money-bill-wave"></i> Bulky sales</a></li>
+    </div>
+    <form id="vendorForm">
+        <label for="productSelectB">Select Product:</label>
+        <select id="productSelectB" required>
+            <!-- Options will be dynamically added here -->
+        </select>
+        
+        <label for="quantityB">Quantity:</label>
+        <input type="number" id="quantityB" required>
+        
+        <button type="button" onclick="addToCartB()">Add to Cart</button>
+    </form>
+    <h3>Cart</h3>
+    <ul id="cartListB" style="max-height: 200px; overflow-y: auto;"></ul>
+    <h4>Total Cost: UGX <span id="totalCostB">0</span></h4>
+    <h3>Payment</h3>
+    <label for="sellingFarmB">Selling Farm:</label>
+    <input type="text" id="sellingFarmB" required>
+    <label for="customerNameB">Customer's Name:</label>
+    <input type="text" id="customerNameB" required>
+    <label for="paymentMethodB">Select Payment Method:</label>
+    <select id="paymentMethodB" onchange="updatePaymentDetailsB()">
+        <option value="cash">Cash</option>
+        <option value="airtel_money">Airtel Money</option>
+        <option value="mtn_money">MTN Money</option>
+        <option value="bank">Bank</option>
+    </select>
+    <div id="paymentDetailsB"></div>
+    <label for="amountPaid">Amount Paid:</label>
+    <input type="number" id="amountPaidB" required>
+    <div id="debtorDetailsB" style="display: none;">
+        <label for="debtorContact">Debtor's Contact:</label>
+        <input type="text" id="debtorContactB">
+        <button type="button" onclick="confirmDebtorDetailsB()">Done</button>
+    </div>
+    <button type="button" onclick="confirmPaymentB()">
+        <i class="fas fa-money-bill-wave wave-icon"></i> Confirm Payment
+    </button>
+    <div id="receiptContainerB" style="padding: 20px; background-color: #ecf0f1; border-top: 1px solid #bdc3c7; margin-top: 20px;"></div>
+    <div id="demandingFormContainerB" style="padding: 20px; background-color: #f8d7da; border-top: 1px solid #f5c6cb; margin-top: 20px;"></div>
+    <button type="button" onclick="printReceiptB()">Print Receipt</button>
+    <button type="button" onclick="printDemandingFormB()">Print Demanding Form</button>
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            displayGreeting();
+            fetchProducts(); // Fetch products from the shared source
+            setInterval(displayGreeting, 60000); // Update greeting and time every minute
+            // ...existing code...
+        });
+
+        function fetchProducts() {
+            // Assuming products are fetched from a server or shared JavaScript file
+            fetch('products.json') // Use a relative path
+                .then(response => response.json())
+                .then(products => populateProductListB(products))
+                .catch(error => console.error('Error fetching products:', error));
+        }
+
+        function populateProductListB(products) {
+            const productSelectB = document.getElementById('productSelectB');
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = product.name;
+                productSelectB.appendChild(option);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            displayGreeting();
+            fetchProducts(); // Ensure this function is called
+            setInterval(displayGreeting, 60000); // Update greeting and time every minute
+
+            const cartIcon = document.getElementById('cartIcon');
+            const cartTextB = document.getElementById('cartTextB'); // Corrected ID
+            const text = " Add to Cart";
+            let index = 0;
+
+            cartIcon.style.position = 'relative';
+            cartIcon.style.transition = 'left 1s linear';
+            cartIcon.style.left = '100%';
+
+            const interval = setInterval(() => {
+                if (index < text.length) {
+                    cartTextB.textContent += text[index]; // Corrected ID
+                    index++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 100);
+
+            setTimeout(() => {
+                cartIcon.style.left = '0';
+                cartIcon.classList.add('wobble-icon');
+                cartIcon.style.animation = 'wobble 1s infinite';
+            }, 1100); // 100ms delay + 1s transition
+        });
+
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
+    <script>
+        function displayGreeting() {
+            const now = new Date();
+            const hours = now.getHours();
+            let greeting;
+            let icon;
+
+            if (hours < 12) {
+                greeting = "Good Morning";
+                icon = '<i class="fas fa-sun"></i>';
+            } else if (hours < 18) {
+                greeting = "Good Afternoon";
+                icon = '<i class="fas fa-cloud-sun"></i>';
+            } else if (hours < 21) {
+                greeting = "Good Evening";
+                icon = '<i class="fas fa-sunset"></i>';
+            } else {
+                greeting = "Good Night";
+                icon = '<i class="fas fa-moon"></i>';
+            }
+
+            const greetingMessage = document.getElementById('greetingMessage');
+            greetingMessage.innerHTML = greeting;
+
+            setTimeout(() => {
+                greetingMessage.innerHTML = `${now.toLocaleTimeString()} ${icon}`;
+            }, 30000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            displayGreeting();
+            setInterval(displayGreeting, 60000); // Update greeting and time every minute
+            // ...existing code...
+        });
+    </script>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+    <style>
+        footer {
+            position: static; /* Changed from fixed to static */
+            bottom: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+        footer a {
+            color: #ecf0f1;
+            margin-left: 10px;
+        }
+    </style>
+</body>
+</html>

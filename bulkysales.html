@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales - FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="script.js"></script>
+    <style>
+        nav {
+            background-color: #2c3e50;
+            padding: 10px;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: space-around;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: #34495e;
+        }
+        .menu-icon {
+            display: none;
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+        }
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 1;
+        }
+        .side-menu a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ecf0f1;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu a:hover {
+            background-color: #34495e;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 36px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                display: none;
+            }
+            .menu-icon {
+                display: block;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+            h2 {
+                margin-right: 40px; /* Adjust to align with the menu icon */
+            }
+        }
+        /* Greeting message styles */
+        #greetingMessage {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px; /* Increase the font size */
+            color: #2c3e50;
+            font-weight: bold; /* Make the text bold */
+            font-family: 'Brush Script MT', cursive; /* Ensure the font is set to a cursive style */
+            animation: hoverGlow 6s infinite alternate; /* Change the animation duration to 6 seconds */
+            animation: hoverGlow 6s infinite alternate, hoverMove 2s infinite alternate; /* Add hoverMove animation */
+        }
+        @keyframes hoverGlow {
+            0% {
+                text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(157, 242, 247), 0 0 3px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 5px rgb(157, 242, 247), 0 0 6px rgb(157, 242, 247); /* Glow effect with border */
+            }
+            100% {
+                text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(182, 250, 157), 0 0 3px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 5px rgb(182, 250, 157), 0 0 6px rgb(182, 250, 157); /* Glow effect with border */
+            }
+        }
+
+        @keyframes hoverMove {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-10px);
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <div id="greetingMessage" style="position: absolute; top: 24px; left: 10px; font-size: 24px; color: #2c3e50;"></div>
+    <h2><i class="fas fa-money-bill-wave"></i> Sales Summary</h2>
+    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
+    <nav>
+        <ul>
+            <li><a href="bulkyadmin.html"><i class="fas fa-money-bill-wave"></i> Bulky sales</a></li>
+            <li><a href="bulkyvendor.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+        </ul>
+    </nav>
+    <div id="sideMenu" class="side-menu">
+        <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
+        <li><a href="bulkyadmin.html"><i class="fas fa-money-bill-wave"></i> Bulky hand panel</a></li>
+        <li><a href="bulkyvendor.html"><i class="fas fa-map-marker-alt"></i> Bulky Vendor</a></li>
+    </div>
+    <script>
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
+    <div id="salesContainerB" class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Sales Order Number</th>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Cost (UGX)</th>
+                    <th>Amount Paid (UGX)</th>
+                    <th>Payment Method</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="salesTableBodyB">
+                <!-- Sales data will be dynamically inserted here -->
+            </tbody>
+        </table>
+    </div>
+    <div id="debtorsContainerB" class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="debtorsTableBodyB">
+                <!-- Debtors data will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+    <div id="receiptContainerB" style="padding: 20px; background-color: #ecf0f1; border-top: 1px solid #bdc3c7; margin-top: 20px;"></div>
+    <script>
+        let salesB = [];
+        let nextSalesOrderNumberB = 1;
+        let comments = {};
+
+        // Load sales and comments from localStorage
+        function loadSalesB() {
+            const savedSalesB = localStorage.getItem('salesB');
+            if (savedSalesB) {
+                salesB = JSON.parse(savedSalesB);
+                if (salesB.length > 0) {
+                    const maxOrderNumber = Math.max(...salesB.map(saleB => parseInt(saleB.salesOrderNumberB, 10)));
+                    nextSalesOrderNumberB = maxOrderNumber + 1;
+                }
+            }
+
+            const savedComments = localStorage.getItem('comments');
+            if (savedComments) {
+                comments = JSON.parse(savedComments);
+            }
+        }
+
+        // Function to save sales and comments to localStorage
+        function saveSalesB() {
+            localStorage.setItem('salesB', JSON.stringify(salesB));
+            localStorage.setItem('comments', JSON.stringify(comments));
+        }
+
+        // Function to generate the next sales order number
+        function generateSalesOrderNumberB() {
+            return String(nextSalesOrderNumberB++).padStart(5, '0');
+        }
+
+        // Function to add a new sale
+        function addSaleB(saleB) {
+            saleB.salesOrderNumberB = generateSalesOrderNumberB();
+            salesB.push(saleB);
+            saveSalesB();
+            updateSalesTableB();
+        }
+
+        // Function to format date to DD/MM/YYYY
+        function formatDate(date) {
+            const d = new Date(date);
+            if (isNaN(d.getTime())) {
+                const parts = date.split('/');
+                if (parts.length === 3) {
+                    const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                    return formatDate(formattedDate);
+                }
+                console.error(`Invalid date: ${date}`);
+                return 'Invalid Date';
+            }
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // Function to format month to MM/YYYY
+        function formatMonth(month) {
+            const [year, monthNumber] = month.split('-');
+            return `${String(monthNumber).padStart(2, '0')}/${year}`;
+        }
+
+        // Function to group sales by month
+        function groupSalesByMonthB(salesB) {
+            return salesB.reduce((acc, saleB) => {
+                const date = new Date(saleB.date);
+                const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!acc[month]) {
+                    acc[month] = [];
+                }
+                acc[month].push(saleB);
+                return acc;
+            }, {});
+        }
+
+        // Function to update the sales table
+        function updateSalesTableB() {
+            const salesContainerB = document.getElementById('salesContainerB');
+            const debtorsContainerB = document.getElementById('debtorsContainerB');
+            
+            if (!salesContainerB || !debtorsContainerB) {
+                console.error('Sales or Debtors container not found');
+                return;
+            }
+
+            salesContainerB.innerHTML = '';
+            debtorsContainerB.innerHTML = '';
+
+            const salesByMonthB = groupSalesByMonthB(salesB);
+
+            for (const [monthB, monthlySalesB] of Object.entries(salesByMonthB)) {
+                const formattedMonth = formatMonth(monthB); // Ensure month is correctly formatted
+                const monthDiv = document.createElement('div');
+                const monthButton = document.createElement('button');
+                monthButton.textContent = `Sales Records for ${formattedMonth}`;
+                monthButton.onclick = () => {
+                    const content = document.getElementById(`content-${monthB}`);
+                    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                };
+
+                const monthContentDiv = document.createElement('div');
+                monthContentDiv.id = `content-${monthB}`;
+                monthContentDiv.style.display = 'none';
+
+                const salesByDate = groupSalesByDateB(monthlySalesB);
+
+                for (const [date, dailySalesB] of Object.entries(salesByDate)) {
+                    const formattedDate = formatDate(date); // Ensure date is correctly formatted
+                    const salesTableB = createSalesTableB(formattedDate, dailySalesB);
+                    const debtorsTableB = createDebtorsTableB(formattedDate, dailySalesB);
+
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.style.display = 'flex';
+                    buttonContainer.style.alignItems = 'center';
+
+                    const dropdownButton = document.createElement('button');
+                    dropdownButton.textContent = `Sales Records for ${formattedDate}`;
+                    dropdownButton.onclick = () => {
+                        const content = document.getElementById(`content-${formattedDate}`);
+                        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                    };
+
+                    if (dailySalesB.some(saleB => saleB.amountPaid < saleB.totalCost)) {
+                        dropdownButton.classList.add('warning-button');
+                    }
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.style.marginLeft = '10px';
+                    deleteButton.onclick = () => {
+                        const password = prompt('Enter password to delete:');
+                        if (password === 'admin123') {
+                            const section = document.getElementById(`section-${formattedDate}`);
+                            section.remove();
+                            salesB = salesB.filter(saleB => formatDate(new Date(saleB.date)) !== formattedDate);
+                            saveSalesB();
+                        } else {
+                            alert('Incorrect password');
+                        }
+                    };
+
+                    buttonContainer.appendChild(dropdownButton);
+                    buttonContainer.appendChild(deleteButton);
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.id = `content-${formattedDate}`;
+                    contentDiv.style.display = 'none';
+                    contentDiv.appendChild(salesTableB);
+                    contentDiv.appendChild(debtorsTableB);
+
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.id = `section-${formattedDate}`;
+                    sectionDiv.appendChild(buttonContainer);
+                    sectionDiv.appendChild(contentDiv);
+
+                    monthContentDiv.appendChild(sectionDiv);
+                }
+
+                monthDiv.appendChild(monthButton);
+                monthDiv.appendChild(monthContentDiv);
+                salesContainerB.appendChild(monthDiv);
+            }
+
+            // Calculate total sales and display summary for each date
+            for (const [monthB, monthlySalesB] of Object.entries(salesByMonthB)) {
+                const salesByDate = groupSalesByDateB(monthlySalesB);
+                for (const [date, dailySalesB] of Object.entries(salesByDate)) {
+                    const formattedDate = formatDate(date);
+                    calculateTotalSalesForDateB(formattedDate, dailySalesB);
+                    displaySalesSummaryB(formattedDate, dailySalesB);
+                }
+            }
+        }
+
+        // Function to group sales by date
+        function groupSalesByDateB(salesB) {
+            return salesB.reduce((acc, saleB) => {
+                const date = saleB.date;
+                if (!acc[date]) {
+                    acc[date] = [];
+                }
+                acc[date].push(saleB);
+                return acc;
+            }, {});
+        }
+
+        // Function to create sales table
+        function createSalesTableB(date, salesB) {
+            const formattedDate = date.replace(/\//g, '-');
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Sales Order Number</th>
+                        <th>Selling Farm</th> <!-- Ensure selling farm is displayed -->
+                        <th>Customer's Name</th> <!-- Ensure customer's name is displayed -->
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Cost (UGX)</th>
+                        <th>Amount Paid (UGX)</th>
+                        <th>Payment Method</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="salesTableBodyB-${formattedDate}">
+                    ${salesB.map((saleB, index) => `
+                        <tr id="sale-${saleB.salesOrderNumberB}">
+                            <td>${saleB.date}</td>
+                            <td>${saleB.time}</td>
+                            <td>${saleB.salesOrderNumberB}</td>
+                            <td>${saleB.sellingFarm || 'N/A'}</td> <!-- Ensure selling farm is displayed -->
+                            <td>${saleB.customerName || 'N/A'}</td> <!-- Ensure customer's name is displayed -->
+                            <td>${saleB.products.map(productB => productB.name).join('<br>')}</td>
+                            <td>${saleB.products.map(productB => productB.quantity).join('<br>')}</td>
+                            <td>${saleB.products.map(productB => `UGX ${productB.price * productB.quantity}`).join('<br>')}</td>
+                            <td>UGX ${saleB.amountPaid}</td>
+                            <td>${saleB.paymentDetails}</td>
+                            <td><button onclick="deleteSaleB('${saleB.salesOrderNumberB}')">Delete</button></td>
+                        </tr>
+                    `).join('')}
+                    <tr>
+                        <td colspan="5"><strong>Total Sales (UGX):</strong></td>
+                        <td id="totalSalesAmountB-${formattedDate}" class="total-sales-amount">0</td>
+                        <td colspan="4"></td>
+                    </tr>
+                </tbody>
+            `;
+            const sendMailButton = document.createElement('button');
+            sendMailButton.textContent = 'Send Sales Report';
+            sendMailButton.onclick = () => {
+                sendMailB(formattedDate);
+            };
+            table.appendChild(sendMailButton);
+
+            return table;
+        }
+
+        // Function to calculate total sales for date
+        function calculateTotalSalesForDateB(date, dailySalesB) {
+            const formattedDate = date.replace(/\//g, '-');
+            const totalSales = dailySalesB.reduce((total, saleB) => total + saleB.amountPaid, 0);
+            const totalSalesElement = document.getElementById(`totalSalesAmountB-${formattedDate}`);
+            if (totalSalesElement) {
+                totalSalesElement.textContent = `UGX ${totalSales}`;
+            } else {
+                console.error(`Element with ID totalSalesAmountB-${formattedDate} not found`);
+            }
+        }
+
+        // Function to create debtors table
+        function createDebtorsTableB(date, salesB) {
+            const debtorsB = salesB.filter(saleB => saleB.amountPaid < saleB.totalCost);
+            const container = document.createElement('div');
+
+            if (debtorsB.length > 0) {
+                const title = document.createElement('h3');
+                title.textContent = `Debtors for ${formatDate(date)}`;
+                container.appendChild(title);
+
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Sales Order Number</th>
+                            <th>Customer's Name</th> <!-- Updated column header -->
+                            <th>Debtor's Contact</th>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Cost (UGX)</th>
+                            <th>Amount Paid (UGX)</th>
+                            <th>Amount Demanded (UGX)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${debtorsB.map((saleB, index) => `
+                            <tr>
+                                <td>${formatDate(saleB.date)}</td>
+                                <td>${saleB.time}</td>
+                                <td>${saleB.salesOrderNumberB}</td>
+                                <td>${saleB.customerName}</td> <!-- Use customer's name -->
+                                <td>${saleB.debtorContact}</td>
+                                <td>${saleB.products.map(productB => productB.name).join('<br>')}</td>
+                                <td>${saleB.products.map(productB => productB.quantity).join('<br>')}</td>
+                                <td>${saleB.products.map(productB => `UGX ${productB.price * productB.quantity}`).join('<br>')}</td>
+                                <td>UGX ${saleB.amountPaid}</td>
+                                <td>UGX ${saleB.totalCost - saleB.amountPaid}</td>
+                                <td><button onclick="markAsPaidB('${saleB.salesOrderNumberB}')">Paid</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                `;
+                container.appendChild(table);
+            }
+
+            return container;
+        }
+
+        function markAsPaidB(salesOrderNumberB) {
+            const saleB = salesB.find(saleB => saleB.salesOrderNumberB === salesOrderNumberB);
+            if (saleB) {
+                const paymentMethod = prompt("Enter payment method for the remaining amount (cash, airtel_money, mtn_money, bank):");
+                if (paymentMethod && ['cash', 'airtel_money', 'mtn_money', 'bank'].includes(paymentMethod)) {
+                    const amountPaid = parseFloat(prompt("Enter the amount paid:"));
+                    if (!isNaN(amountPaid) && amountPaid > 0) {
+                        const remainingAmount = saleB.totalCost - saleB.amountPaid;
+                        if (amountPaid >= remainingAmount) {
+                            saleB.amountPaid += remainingAmount;
+                            saleB.balance = amountPaid - remainingAmount;
+                            saleB.paymentMethod = paymentMethod;
+                            saleB.paymentDetails = getPaymentDetailsB(paymentMethod);
+                            delete saleB.debtorContact;
+                        } else {
+                            saleB.amountPaid += amountPaid;
+                            saleB.balance = saleB.totalCost - saleB.amountPaid;
+                            saleB.paymentMethod = paymentMethod;
+                            saleB.paymentDetails = getPaymentDetailsB(paymentMethod);
+                        }
+                        saveSalesB(); // Save sales to localStorage
+                        updateSalesTableB(); // Update sales table
+                        updateDebtorsTableB(); // Update debtors table
+                    } else {
+                        alert("Invalid amount. Please enter a valid number.");
+                    }
+                } else {
+                    alert("Invalid payment method. Please enter one of the following: cash, airtel_money, mtn_money, bank.");
+                }
+            }
+        }
+
+        function getPaymentDetailsB(paymentMethod) {
+            switch (paymentMethod) {
+                case 'cash':
+                    return 'Cash';
+                case 'airtel_money':
+                    return 'Airtel merchant code - 6345768';
+                case 'mtn_money':
+                    return 'MOMO Pay - 186508';
+                case 'bank':
+                    return 'Bank - Equity 1010xxxxxx450';
+                default:
+                    return '';
+            }
+        }
+
+        // Function to delete a sale record
+        function deleteSaleB(salesOrderNumberB) {
+            if (confirm('Are you sure you want to delete this record?')) {
+                const saleIndex = salesB.findIndex(saleB => saleB.salesOrderNumberB === salesOrderNumberB);
+                if (saleIndex !== -1) {
+                    salesB.splice(saleIndex, 1);
+                    saveSalesB(); // Save sales to localStorage
+                    updateSalesTableB();
+                }
+            }
+        }
+
+        // Function to display summary of sales by payment method at the end of the day
+        function displaySalesSummaryB(date, dailySalesB) {
+            const formattedDate = date.replace(/\//g, '-');
+            const salesTableBodyB = document.getElementById(`salesTableBodyB-${formattedDate}`);
+            if (salesTableBodyB) {
+                const existingSummaryRows = salesTableBodyB.querySelectorAll('.summary-row');
+                existingSummaryRows.forEach(row => row.remove());
+
+                const existingSummaryTitle = salesTableBodyB.querySelector('.summary-title');
+                if (!existingSummaryTitle) {
+                    const summaryTitleElement = document.createElement('tr');
+                    summaryTitleElement.classList.add('summary-title');
+                    summaryTitleElement.innerHTML = `
+                        <td colspan="10"><strong>Sales Summary for ${formatDate(date)}:</strong></td>
+                    `;
+                    salesTableBodyB.appendChild(summaryTitleElement);
+                }
+
+                const paymentMethodsB = ['cash', 'airtel_money', 'mtn_money', 'bank'];
+                paymentMethodsB.forEach(method => {
+                    let total = 0;
+                    dailySalesB.forEach(saleB => {
+                        if (saleB.paymentMethod === method) {
+                            total += saleB.amountPaid;
+                        }
+                    });
+
+                    const methodElement = document.createElement('tr');
+                    methodElement.classList.add('summary-row');
+                    methodElement.innerHTML = `
+                        <td colspan="5"><strong>${method.replace('_', ' ').toUpperCase()} Sales (UGX):</strong></td>
+                        <td>UGX ${total}</td>
+                        <td colspan="4"></td>
+                    `;
+                    salesTableBodyB.appendChild(methodElement);
+                });
+            } else {
+                console.error(`Sales table body for ${formattedDate} not found`);
+            }
+        }
+
+        // Function to take a snapshot of the sales summary and provide sharing options
+        function sendMailB(date) {
+            const formattedDate = date.replace(/\//g, '-');
+            const salesTableBodyB = document.getElementById(`salesTableBodyB-${formattedDate}`);
+            if (salesTableBodyB) {
+                html2canvas(salesTableBodyB).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = `Sales_Summary_${formattedDate}.png`;
+                    link.click();
+                }).catch(error => {
+                    console.error('Error capturing the sales summary:', error);
+                });
+            } else {
+                console.error('Sales table body not found for date:', formattedDate);
+            }
+        }
+
+        // Load sales data when the page loads
+        window.onload = function() {
+            loadSalesB();
+            updateSalesTableB();
+            updateDebtorsTableB();
+        };
+    </script>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BULK hand - FARMFAIR</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script>
+        let productsB = [];
+        let cartB = [];
+        let salesB = [];
+        let editIndexB = -1;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProductsB();
+            loadSalesB();
+            updateProductListB();
+            addNewBusinessDayDate();
+            console.log('Page loaded and tracking table updated');
+        });
+
+        // Add product to the product list
+        function addProductB() {
+            const productNameB = document.getElementById('productNameB').value;
+            const unitPriceB = document.getElementById('unitPriceB').value;
+            const openingStockB = document.getElementById('openingStockB').value;
+
+            if (productNameB && unitPriceB && openingStockB) {
+                const productB = {
+                    name: productNameB,
+                    price: unitPriceB,
+                    openingStock: parseInt(openingStockB, 10),
+                    quantity: parseInt(openingStockB, 10), // Set initial quantity equal to opening stock
+                    replenishments: [],
+                    totalSales: 0
+                };
+
+                if (editIndexB === -1) {
+                    productsB.push(productB);
+                } else {
+                    productsB[editIndexB] = productB;
+                    editIndexB = -1;
+                }
+
+                updateProductListB();
+                saveProductsB();
+                clearFormB();
+            } else {
+                alert('Please fill in all fields');
+            }
+        }
+
+        // Update the product list in both admin and vendor forms
+        function updateProductListB() {
+            const productListB = document.getElementById('productListB');
+            const productSelectB = document.getElementById('productSelectB');
+            
+            if (productListB) {
+                productListB.innerHTML = '';
+                productsB.forEach((productB, index) => {
+                    const totalReplenishmentsB = (productB.replenishments || []).reduce((a, b) => a + b.quantity, 0);
+                    const initialQuantityB = productB.openingStock + totalReplenishmentsB; // Initial quantity based on opening stock and replenishments
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${productB.name}</td>
+                        <td>UGX ${productB.price}</td>
+                        <td>${productB.openingStock}</td>
+                        <td>${productB.quantity}</td>
+                        <td>
+                            <button onclick="editProductB(${index})">Edit</button>
+                            <button onclick="deleteProductB(${index})">Delete</button>
+                            <button onclick="replenishProductB(${index})">Replenish</button>
+                        </td>
+                    `;
+                    productListB.appendChild(row);
+                });
+            }
+            
+            if (productSelectB) {
+                productSelectB.innerHTML = '';
+                productsB.forEach((productB, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = `${productB.name} - UGX ${productB.price} (Qty: ${productB.quantity})`;
+                    productSelectB.appendChild(option);
+                });
+            }
+        }
+
+        function editProductB(index) {
+            const productB = productsB[index];
+            document.getElementById('productNameB').value = productB.name;
+            document.getElementById('unitPriceB').value = productB.price;
+            document.getElementById('openingStockB').value = productB.openingStock;
+            document.getElementById('quantityB').value = productB.quantity;
+            editIndexB = index;
+        }
+
+        function deleteProductB(index) {
+            productsB.splice(index, 1);
+            updateProductListB();
+            saveProductsB();
+        }
+
+        function clearFormB() {
+            document.getElementById('productNameB').value = '';
+            document.getElementById('unitPriceB').value = '';
+            document.getElementById('openingStockB').value = '';
+            document.getElementById('quantityB').value = '';
+        }
+
+        // Load products from localStorage
+        function loadProductsB() {
+            const storedProductsB = localStorage.getItem('productsB');
+            if (storedProductsB) {
+                productsB = JSON.parse(storedProductsB);
+                updateProductListB();
+            }
+        }
+
+        // Save products to localStorage
+        function saveProductsB() {
+            localStorage.setItem('productsB', JSON.stringify(productsB));
+        }
+
+        function replenishProductB(index) {
+            const quantityB = parseInt(prompt('Enter quantity to replenish:'), 10);
+            if (!isNaN(quantityB) && quantityB > 0) {
+                productsB[index].quantity += quantityB;
+                productsB[index].replenishments.push({ quantity: quantityB });
+                updateProductListB();
+                saveProductsB();
+            } else {
+                alert('Invalid quantity');
+            }
+        }
+
+        // Update the cart list and total cost
+        function updateCartB() {
+            const cartListB = document.getElementById('cartListB');
+            cartListB.innerHTML = '';
+
+            let totalCostB = 0;
+
+            cartB.forEach((item) => {
+                const liB = document.createElement('li');
+                liB.textContent = `${item.name} - UGX ${item.price} x ${item.quantity}`;
+                cartListB.appendChild(liB);
+                totalCostB += item.price * item.quantity;
+            });
+
+            document.getElementById('totalCostB').textContent = totalCostB;
+        }
+
+        // Load products, sales, and tracking data when the page loads
+        window.onload = function() {
+            loadProductsB();
+            loadSalesB();
+            addNewBusinessDayDate();
+        };
+
+        function displayGreeting() {
+            const now = new Date();
+            const hours = now.getHours();
+            let greeting;
+            let icon;
+
+            if (hours < 12) {
+                greeting = "Good Morning";
+                icon = '<i class="fas fa-sun"></i>';
+            } else if (hours < 18) {
+                greeting = "Good Afternoon";
+                icon = '<i class="fas fa-cloud-sun"></i>';
+            } else if (hours < 21) {
+                greeting = "Good Evening";
+                icon = '<i class="fas fa-sunset"></i>';
+            } else {
+                greeting = "Good Night";
+                icon = '<i class="fas fa-moon"></i>';
+            }
+
+            const greetingMessage = document.getElementById('greetingMessage');
+            const sideGreetingMessage = document.getElementById('sideGreetingMessage');
+            greetingMessage.innerHTML = greeting;
+            sideGreetingMessage.innerHTML = greeting;
+
+            setTimeout(() => {
+                const timeString = `${now.toLocaleTimeString()} ${icon}`;
+                greetingMessage.innerHTML = timeString;
+                sideGreetingMessage.innerHTML = timeString;
+            }, 30000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            displayGreeting();
+            setInterval(displayGreeting, 60000); // Update greeting and time every minute
+        });
+
+        function openMenu() {
+            document.getElementById('sideMenu').style.width = '250px';
+            document.getElementById('sideGreetingMessage').style.display = 'block';
+        }
+    
+        function closeMenu() {
+            document.getElementById('sideMenu').style.width = '0';
+            document.getElementById('sideGreetingMessage').style.display = 'none';
+        }
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+    
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
+    <style>
+        /* ...existing styles... */
+        nav {
+            justify-content: space-around;
+        }
+        nav ul li {
+            display: inline;
+        }
+        nav ul li a {
+            color: #ecf0f1;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav ul li a:hover {
+            background-color: #34495e;
+        }
+        .menu-icon {
+            display: none;
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+        }
+        .side-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 1;
+        }
+        .side-menu a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ecf0f1;
+            display: block;
+            transition: 0.3s;
+        }
+        .side-menu a:hover {
+            background-color: #34495e;
+        }
+        .side-menu .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 36px;
+        }
+        @media (max-width: 600px) {
+            nav ul {
+                display: none;
+            }
+            .menu-icon {
+                display: block;
+                position: absolute;
+                top: 10px;
+                right: 10px;
+            }
+            h2 {
+                margin-right: 40px; /* Adjust to align with the menu icon */
+            }
+            #greetingMessage {
+                display: none;
+            }
+            #sideGreetingMessage {
+                display: block;
+                position: relative;
+                top: 10px;
+            }
+        }
+                /* Greeting message styles */
+                #greetingMessage {
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    font-size: 24px; /* Increase the font size */
+                    color: #2c3e50;
+                    font-weight: bold; /* Make the text bold */
+                    font-family: 'Brush Script MT', cursive; /* Ensure the font is set to a cursive style */
+                    animation: hoverGlow 6s infinite alternate; /* Change the animation duration to 6 seconds */
+                    animation: hoverGlow 6s infinite alternate, hoverMove 2s infinite alternate; /* Add hoverMove animation */
+                }
+                @keyframes hoverGlow {
+                    0% {
+                        text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(157, 242, 247), 0 0 3px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 4px rgb(157, 242, 247), 0 0 5px rgb(157, 242, 247), 0 0 6px rgb(157, 242, 247); /* Glow effect with border */
+                    }
+                    100% {
+                        text-shadow: 0 0 1px rgb(157, 242, 247), 0 0 2px rgb(182, 250, 157), 0 0 3px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 4px rgb(182, 250, 157), 0 0 5px rgb(182, 250, 157), 0 0 6px rgb(182, 250, 157); /* Glow effect with border */
+                    }
+                }
+                @keyframes hoverMove {
+                    0% {
+                        transform: translateY(0);
+                    }
+                    100% {
+                        transform: translateY(-10px);
+                    }
+                }
+    </style>
+</head>
+<body>
+    <div id="greetingMessage" style="position: absolute; top: 24px; left: 10px; font-size: 24px; color: #2c3e50;"></div>
+    <h2><i class="fas fa-user-shield"></i> Bulky Admin Panel</h2>
+    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
+    <nav>
+        <ul>
+            <li><a class="nav-button" href="bulkyvendor.html"><i class="fas fa-home"></i> Bulky hand panel</a></li>
+            <li><a href="bulkysales.html"><i class="fas fa-money-bill-wave"></i> Bulky sales</a></li>
+        </ul>
+    </nav>
+    <div id="sideMenu" class="side-menu">
+        <li><a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a></li>
+        <li><a href="bulkyvendor.html"><i class="fas fa-home"></i> Bulky hand panel</a></li>
+        <li><a href="bulkysales.html"><i class="fas fa-money-bill-wave"></i> Bulky sales</a></li>
+        <div id="greetingMessage" style="display: none;"></div>
+    </div>
+    <form id="bulkyAdminForm">
+        <label for="productNameB">Product Name:</label>
+        <input type="text" id="productNameB" required>
+        
+        <label for="unitPriceB">Unit Price (UGX):</label>
+        <input type="number" id="unitPriceB" required>
+        
+        <label for="openingStockB">Opening Stock:</label>
+        <input type="number" id="openingStockB" required>
+        
+        <label for="quantityB">Quantity:</label>
+        <input type="number" id="quantityB" required>
+        
+        <button type="button" onclick="addProductB()">Add Product</button>
+    </form>
+    <h3>Product List</h3>
+    <table id="productTableB">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Unit Price (UGX)</th>
+                <th>Opening Stock</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody id="productListB">
+            <!--The product rows will be dynamically added here-->
+        </tbody>
+    </table>
+    <script src="script.js"></script>
+    <script>
+        function displayGreeting() {
+            const now = new Date();
+            const hours = now.getHours();
+            let greeting;
+            let icon;
+
+            if (hours < 12) {
+                greeting = "Good Morning";
+                icon = '<i class="fas fa-sun"></i>';
+            } else if (hours < 18) {
+                greeting = "Good Afternoon";
+                icon = '<i class="fas fa-cloud-sun"></i>';
+            } else if (hours < 21) {
+                greeting = "Good Evening";
+                icon = '<i class="fas fa-sunset"></i>';
+            } else {
+                greeting = "Good Night";
+                icon = '<i class="fas fa-moon"></i>';
+            }
+
+            const greetingMessage = document.getElementById('greetingMessage');
+            greetingMessage.innerHTML = greeting;
+
+            setTimeout(() => {
+                greetingMessage.innerHTML = `${now.toLocaleTimeString()} ${icon}`;
+            }, 30000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            displayGreeting();
+            setInterval(displayGreeting, 60000); // Update greeting and time every minute
+            // ...existing code...
+        });
+    </script>
+    <footer>
+        <p>&copy; Farmfair powered by Omblo technologies 
+            <a href="https://www.instagram.com/yourbusiness" target="_blank">
+                <i class="fab fa-instagram"></i>
+            </a>
+        </p>
+    </footer>
+    <style>
+        footer {
+            position: static; /* Changed from fixed to static */
+            bottom: 0;
+            width: 100%;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 12px;
+        }
+        footer a {
+            color: #ecf0f1;
+            margin-left: 10px;
+        }
+    </style>
+</body>
+</html>
