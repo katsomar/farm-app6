@@ -55,12 +55,14 @@ function updateProductList() {
         products.forEach((product, index) => {
             const totalReplenishments = (product.replenishments || []).reduce((a, b) => a + b.quantity, 0);
             const initialQuantity = product.openingStock + totalReplenishments; // Initial quantity based on opening stock and replenishments
+            const expectedAmount = product.quantity * product.price; // Calculate expected amount
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${product.name}</td>
                 <td>UGX ${product.price}</td>
                 <td>${product.openingStock}</td>
                 <td>${product.quantity}</td>
+                <td>UGX ${expectedAmount}</td> <!-- Display expected amount -->
                 <td>
                     <button onclick="editProduct(${index})">Edit</button>
                     <button onclick="deleteProduct(${index})">Delete</button>
@@ -582,14 +584,13 @@ function replenishProduct(index) {
     const quantity = parseInt(prompt('Enter quantity to replenish:'), 10);
     if (!isNaN(quantity) && quantity > 0) {
         products[index].quantity += quantity;
-        products[index].replenishmentsB.push({ quantity });
+        products[index].replenishments.push({ quantity }); // Corrected property name
         updateProductList();
         saveProducts();
+        saveTrackingData(); // Save tracking data to localStorage
     } else {
         alert('Invalid quantity');
     }
-    saveProducts(); // Save products to localStorage
-    saveTrackingData(); // Save tracking data to localStorage
 }
 
 function createNewTrackingTable() {

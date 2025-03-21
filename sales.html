@@ -73,17 +73,30 @@
         }
 
         // Function to group sales by month
+        
+
         function groupSalesByMonth(sales) {
-            return sales.reduce((acc, sale) => {
-                const date = new Date(sale.date);
-                const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                if (!acc[month]) {
-                    acc[month] = [];
-                }
-                acc[month].push(sale);
-                return acc;
-            }, {});
+    return sales.reduce((acc, sale) => {
+        let parts = sale.date.split('/');
+        if (parts.length !== 3) {
+            console.error(`Invalid date format: ${sale.date}`);
+            return acc;
         }
+
+        // Ensure correct ordering: parts[0] = day, parts[1] = month, parts[2] = year
+        let day = parts[0], month = parts[1], year = parts[2];
+
+        const formattedMonth = `${year}-${month.padStart(2, '0')}`; // YYYY-MM
+
+        if (!acc[formattedMonth]) {
+            acc[formattedMonth] = [];
+        }
+        acc[formattedMonth].push(sale);
+        return acc;
+    }, {});
+}
+
+
 
         // Function to update the sales table
         function updateSalesTable() {
@@ -102,18 +115,26 @@
 
             for (const [month, monthlySales] of Object.entries(salesByMonth)) {
                 const formattedMonth = formatMonth(month); // Ensure month is correctly formatted
-                const monthDiv = document.createElement('div');
-                const monthButton = document.createElement('button');
-                monthButton.textContent = `Sales Records for ${formattedMonth}`;
-                monthButton.onclick = () => {
-                    const content = document.getElementById(`content-${month}`);
-                    content.style.display = content.style.display === 'none' ? 'block' : 'none';
-                };
+                let monthDiv = document.getElementById(`month-${month}`);
+                if (!monthDiv) {
+                    monthDiv = document.createElement('div');
+                    monthDiv.id = `month-${month}`;
+                    const monthButton = document.createElement('button');
+                    monthButton.textContent = `Sales Records for ${formattedMonth}`;
+                    monthButton.onclick = () => {
+                        const content = document.getElementById(`content-${month}`);
+                        content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                    };
+                    monthDiv.appendChild(monthButton);
 
-                const monthContentDiv = document.createElement('div');
-                monthContentDiv.id = `content-${month}`;
-                monthContentDiv.style.display = 'none';
+                    const monthContentDiv = document.createElement('div');
+                    monthContentDiv.id = `content-${month}`;
+                    monthContentDiv.style.display = 'none';
+                    monthDiv.appendChild(monthContentDiv);
+                    salesContainer.appendChild(monthDiv);
+                }
 
+                const monthContentDiv = document.getElementById(`content-${month}`);
                 const salesByDate = groupSalesByDate(monthlySales);
 
                 for (const [date, dailySales] of Object.entries(salesByDate)) {
@@ -168,10 +189,6 @@
 
                     monthContentDiv.appendChild(sectionDiv);
                 }
-
-                monthDiv.appendChild(monthButton);
-                monthDiv.appendChild(monthContentDiv);
-                salesContainer.appendChild(monthDiv);
             }
 
             // Calculate total sales and display summary for each date
@@ -186,16 +203,29 @@
         }
 
         // Function to group sales by date
+        
         function groupSalesByDate(sales) {
-            return sales.reduce((acc, sale) => {
-                const date = sale.date;
-                if (!acc[date]) {
-                    acc[date] = [];
-                }
-                acc[date].push(sale);
-                return acc;
-            }, {});
+    return sales.reduce((acc, sale) => {
+        let parts = sale.date.split('/');
+        if (parts.length !== 3) {
+            console.error(`Invalid sale date: ${sale.date}`);
+            return acc;
         }
+
+        let day = parts[0], month = parts[1], year = parts[2];
+        const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`; // YYYY-MM-DD
+
+        if (!acc[formattedDate]) {
+            acc[formattedDate] = [];
+        }
+        acc[formattedDate].push(sale);
+        return acc;
+    }, {});
+}
+
+        
+
+
 
         // Function to create sales table
         function createSalesTable(date, sales) {
@@ -210,6 +240,7 @@
                         <th>Product Name</th>
                         <th>Quantity</th>
                         <th>Cost (UGX)</th>
+                        <th>Expected Amount (UGX)</th> <!-- New column -->
                         <th>Amount Paid (UGX)</th>
                         <th>Balance (UGX)</th>
                         <th>Payment Method</th>
@@ -225,6 +256,7 @@
                             <td>${sale.products.map(product => product.name).join('<br>')}</td>
                             <td>${sale.products.map(product => product.quantity).join('<br>')}</td>
                             <td>${sale.products.map(product => `UGX ${product.price * product.quantity}`).join('<br>')}</td>
+                            <td>UGX ${sale.products.reduce((total, product) => total + (product.price * product.quantity), 0)}</td> <!-- New column data -->
                             <td>UGX ${sale.amountPaid}</td>
                             <td>UGX ${sale.balance}</td>
                             <td>${sale.paymentDetails}</td>
@@ -232,9 +264,10 @@
                         </tr>
                     `).join('')}
                     <tr>
-                        <td colspan="5"><strong>Total Sales (UGX):</strong></td>
+                        <td colspan="6"><strong>Total Sales (UGX):</strong></td>
                         <td id="totalSalesAmount-${formattedDate}" class="total-sales-amount">0</td>
-                        <td colspan="4"></td>
+                        <td id="totalAmountPaid-${formattedDate}" class="total-amount-paid">0</td>
+                        <td colspan="3"></td>
                     </tr>
                 </tbody>
             `;
@@ -260,6 +293,15 @@
                 console.log(`Updated total sales element for ${formattedDate}`);
             } else {
                 console.error(`Element with ID totalSalesAmount-${formattedDate} not found`);
+            }
+
+            const totalAmountPaid = dailySales.reduce((total, sale) => total + sale.amountPaid, 0);
+            const totalAmountPaidElement = document.getElementById(`totalAmountPaid-${formattedDate}`);
+            if (totalAmountPaidElement) {
+                totalAmountPaidElement.textContent = `UGX ${totalAmountPaid}`;
+                console.log(`Updated total amount paid element for ${formattedDate}`);
+            } else {
+                console.error(`Element with ID totalAmountPaid-${formattedDate} not found`);
             }
         }
 
@@ -755,6 +797,7 @@
                     <th>Product Name</th>
                     <th>Quantity</th>
                     <th>Cost (UGX)</th>
+                    <th>Expected Amount (UGX)</th> <!-- New column -->
                     <th>Amount Paid (UGX)</th>
                     <th>Balance (UGX)</th>
                     <th>Payment Method</th>

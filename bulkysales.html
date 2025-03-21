@@ -234,22 +234,45 @@
 
         // Function to format month to MM/YYYY
         function formatMonth(month) {
-            const [year, monthNumber] = month.split('-');
-            return `${String(monthNumber).padStart(2, '0')}/${year}`;
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+        console.error(`Unexpected month format: ${month}`);
+        return 'Invalid Month';
+    }
+
+    let [year, monthNumber] = month.split('-');
+    return `${monthNumber}/${year}`; // Correct format: MM/YYYY
+}
+   //group sales by month func    
+function groupSalesByMonthB(salesB) {
+    return salesB.reduce((acc, saleB) => {
+        let dateParts = saleB.date.split('/');
+        if (dateParts.length !== 3) {
+            console.error(`Invalid date format: ${saleB.date}`);
+            return acc;
         }
 
-        // Function to group sales by month
-        function groupSalesByMonthB(salesB) {
-            return salesB.reduce((acc, saleB) => {
-                const date = new Date(saleB.date);
-                const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                if (!acc[month]) {
-                    acc[month] = [];
-                }
-                acc[month].push(saleB);
-                return acc;
-            }, {});
+        // Convert from DD/MM/YYYY to YYYY-MM-DD
+        let formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+        let date = new Date(formattedDate);
+
+        if (isNaN(date.getTime())) {
+            console.error(`Invalid parsed date: ${formattedDate}`);
+            return acc;
         }
+
+        let year = date.getFullYear();
+        let month = String(date.getMonth() + 1).padStart(2, '0'); // Ensure two-digit month
+        let key = `${year}-${month}`;
+
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(saleB);
+        return acc;
+    }, {});
+}
+
+       
+
+
 
         // Function to update the sales table
         function updateSalesTableB() {
