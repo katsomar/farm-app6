@@ -69,8 +69,17 @@
             height: 100%;
             background-color: #2c3e50;
             padding-top: 60px;
-            transition: 0.3s;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity: 0;
+            transform: translateX(-100%);
             z-index: 1;
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+        .side-menu.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
         }
         .side-menu a {
             padding: 10px 15px;
@@ -88,6 +97,16 @@
             top: 10px;
             right: 25px;
             font-size: 36px;
+        }
+        .menu-icon {
+            cursor: pointer;
+            color: #34495e;
+            font-size: 24px;
+            margin: 10px;
+            transition: transform 0.3s ease;
+        }
+        .menu-icon.open {
+            transform: rotate(45deg);
         }
         @media (max-width: 600px) {
             nav ul {
@@ -136,7 +155,7 @@
 <body>
     <div id="greetingMessage" style="position: absolute; top: 24px; left: 10px; font-size: 24px; color: #2c3e50;"></div>
     <h2><i class="fas fa-store"></i> Vendor Panel</h2>
-    <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
+    <span class="menu-icon" onclick="toggleMenu()"><i class="fas fa-bars"></i></span>
     <nav>
         <ul>
             <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
@@ -148,7 +167,6 @@
         </ul>
     </nav>
     <div id="sideMenu" class="side-menu">
-        <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
         <a href="index.html"><i class="fas fa-home"></i> Home</a>
         <a href="login.html"><i class="fas fa-user-shield"></i> Admin</a>
         <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
@@ -232,6 +250,18 @@
         }
         function closeMenu() {
             document.getElementById("sideMenu").style.display = "none";
+        }
+        function toggleMenu() {
+            const sideMenu = document.getElementById("sideMenu");
+            const menuIcon = document.querySelector(".menu-icon");
+
+            if (sideMenu.classList.contains("active")) {
+                sideMenu.classList.remove("active");
+                menuIcon.classList.remove("open");
+            } else {
+                sideMenu.classList.add("active");
+                menuIcon.classList.add("open");
+            }
         }
     </script>
     <script>
