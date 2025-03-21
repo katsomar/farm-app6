@@ -121,12 +121,14 @@
     <span class="menu-icon" onclick="openMenu()"><i class="fas fa-bars"></i></span>
     <nav>
         <ul>
-            <li><a href="bulkyadmin.html"><i class="fas fa-money-bill-wave"></i> Bulky sales</a></li>
-            <li><a href="bulkyvendor.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
+            <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="bulkyadmin.html"><i class="fas fa-money-bill-wave"></i> Admin panel</a></li>
+            <li><a href="bulkyvendor.html"><i class="fas fa-map-marker-alt"></i> Bulky vendor</a></li>
         </ul>
     </nav>
     <div id="sideMenu" class="side-menu">
         <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
+        <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
         <li><a href="bulkyadmin.html"><i class="fas fa-money-bill-wave"></i> Bulky hand panel</a></li>
         <li><a href="bulkyvendor.html"><i class="fas fa-map-marker-alt"></i> Bulky Vendor</a></li>
     </div>
@@ -418,6 +420,17 @@
                     const content = document.getElementById(`content-${formattedDate}`);
                     content.style.display = content.style.display === 'none' ? 'block' : 'none';
                 };
+
+                // Add red flagging effect if there are debtors
+                /*
+                if (dailySalesB.some(saleB => saleB.amountPaid < saleB.totalCost)) {
+                    dropdownButton.style.backgroundColor = 'red';
+                    dropdownButton.style.color = 'white';
+                }
+                */
+                if (dailySalesB.some(saleB => saleB.amountPaid < saleB.totalCost)) {
+                        dropdownButton.classList.add('warning-button');
+                }
 
                 const deleteButton = document.createElement('button');
                 deleteButton.textContent = 'Delete';
