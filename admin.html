@@ -119,22 +119,28 @@
     <nav>
         <ul>
             <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
-            <li><a href="vendor.html"><i class="fas fa-home"></i> Vendor</a></li>
+            <li><a href="vendor.html"><i class="fas fa-store"></i> Vendor</a></li>
             <li><a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a></li>
-            <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
             <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
             <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
         </ul>
     </nav>
     <div id="sideMenu" class="side-menu">
         <a href="javascript:void(0)" class="close-btn" onclick="closeMenu()">&times;</a>
-        <a href="index.html"><i class="fas fa-home"></i> Home</a>
-        <a href="vendor.html"><i class="fas fa-home"></i> Vendor</a>
-        <a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a>
-        <a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a>
+        <li><a class="nav-button" href="index.html"><i class="fas fa-home"></i> Home</a></li>
+        <li><a href="vendor.html"><i class="fas fa-store"></i> Vendor</a></li>
+        <li><a href="sales.html"><i class="fas fa-money-bill-wave"></i> Sales</a></li>
         <li><a href="product-tracking.html"><i class="fas fa-map-marker-alt"></i> Product Tracking</a></li>
         <li><a href="pettycash.html"><i class="fas fa-money-bill-wave"></i> Petty Cash</a></li>
     </div>
+    <script>
+        function openMenu() {
+            document.getElementById("sideMenu").style.display = "block";
+        }
+        function closeMenu() {
+            document.getElementById("sideMenu").style.display = "none";
+        }
+    </script>
     <form id="adminForm">
         <label for="productName">Product Name:</label>
         <input type="text" id="productName" required>
