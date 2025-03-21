@@ -158,20 +158,6 @@
             </tbody>
         </table>
     </div>
-    <div id="debtorsContainerB" class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Contact</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="debtorsTableBodyB">
-                <!-- Debtors data will be inserted here -->
-            </tbody>
-        </table>
-    </div>
     <div id="receiptContainerB" style="padding: 20px; background-color: #ecf0f1; border-top: 1px solid #bdc3c7; margin-top: 20px;"></div>
     <script>
         let salesB = [];
@@ -208,29 +194,38 @@
 
         // Function to add a new sale
         function addSaleB(saleB) {
-            saleB.salesOrderNumberB = generateSalesOrderNumberB();
-            salesB.push(saleB);
-            saveSalesB();
-            updateSalesTableB();
-        }
+        saleB.salesOrderNumberB = generateSalesOrderNumberB();
+        salesB.push(saleB);
+        saveSalesB();
+        updateSalesTableB();  // Ensure the table updates after saving
+    }
+
 
         // Function to format date to DD/MM/YYYY
         function formatDate(date) {
-            const d = new Date(date);
-            if (isNaN(d.getTime())) {
-                const parts = date.split('/');
-                if (parts.length === 3) {
-                    const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                    return formatDate(formattedDate);
-                }
-                console.error(`Invalid date: ${date}`);
-                return 'Invalid Date';
-            }
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = d.getFullYear();
-            return `${day}/${month}/${year}`;
+    let d;
+    if (date.includes('-')) {
+        // Handle YYYY-MM-DD format
+        const parts = date.split('-');
+        if (parts.length === 3) {
+            d = new Date(parts[0], parts[1] - 1, parts[2]); // Year, Month (0-based), Day
         }
+    } else if (date.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = date.split('/');
+        if (parts.length === 3) {
+            d = new Date(parts[2], parts[1] - 1, parts[0]); // Year, Month (0-based), Day
+        }
+    }
+    
+       if (isNaN(d)) {
+        console.error(`Invalid date: ${date}`);
+        return 'Invalid Date';
+       }
+
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
 
         // Function to format month to MM/YYYY
         function formatMonth(month) {
@@ -243,29 +238,19 @@
     return `${monthNumber}/${year}`; // Correct format: MM/YYYY
 }
    //group sales by month func    
-function groupSalesByMonthB(salesB) {
+   function groupSalesByMonthB(salesB) {
     return salesB.reduce((acc, saleB) => {
-        let dateParts = saleB.date.split('/');
-        if (dateParts.length !== 3) {
-            console.error(`Invalid date format: ${saleB.date}`);
+        let d = new Date(saleB.date);
+        if (isNaN(d)) {
+            console.error(`Invalid date in sales: ${saleB.date}`);
             return acc;
         }
 
-        // Convert from DD/MM/YYYY to YYYY-MM-DD
-        let formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-        let date = new Date(formattedDate);
-
-        if (isNaN(date.getTime())) {
-            console.error(`Invalid parsed date: ${formattedDate}`);
-            return acc;
+        const formattedMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+        if (!acc[formattedMonth]) {
+            acc[formattedMonth] = [];
         }
-
-        let year = date.getFullYear();
-        let month = String(date.getMonth() + 1).padStart(2, '0'); // Ensure two-digit month
-        let key = `${year}-${month}`;
-
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(saleB);
+        acc[formattedMonth].push(saleB);
         return acc;
     }, {});
 }
@@ -275,6 +260,7 @@ function groupSalesByMonthB(salesB) {
 
 
         // Function to update the sales table
+        /*
         function updateSalesTableB() {
             const salesContainerB = document.getElementById('salesContainerB');
             const debtorsContainerB = document.getElementById('debtorsContainerB');
@@ -372,18 +358,117 @@ function groupSalesByMonthB(salesB) {
                 }
             }
         }
+        */
+        function updateSalesTableB() {
+    const salesContainerB = document.getElementById('salesContainerB');
+    if (!salesContainerB) {
+        console.error('Sales container not found');
+        return;
+    }
+
+    salesContainerB.innerHTML = ''; // Clear existing content
+
+    const salesByMonthB = groupSalesByMonthB(salesB);
+
+    for (const [monthB, monthlySalesB] of Object.entries(salesByMonthB)) {
+        const formattedMonth = formatMonth(monthB);
+
+        let monthDiv = document.getElementById(`month-${monthB}`);
+        if (!monthDiv) {
+            monthDiv = document.createElement('div');
+            monthDiv.id = `month-${monthB}`;
+
+            const monthButton = document.createElement('button');
+            monthButton.textContent = `Sales Records for ${formattedMonth}`;
+            monthButton.onclick = () => {
+                const content = document.getElementById(`content-${monthB}`);
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+            };
+            monthDiv.appendChild(monthButton);
+
+            const monthContentDiv = document.createElement('div');
+            monthContentDiv.id = `content-${monthB}`;
+            monthContentDiv.style.display = 'none';
+            monthDiv.appendChild(monthContentDiv);
+            salesContainerB.appendChild(monthDiv);
+        }
+
+        const monthContentDiv = document.getElementById(`content-${monthB}`);
+        const salesByDate = groupSalesByDateB(monthlySalesB);
+
+        for (const [date, dailySalesB] of Object.entries(salesByDate)) {
+            const formattedDate = formatDate(date);
+            console.log(`Adding sales for: ${formattedDate}`);
+
+            const salesTableB = createSalesTableB(formattedDate, dailySalesB);
+            const debtorsTableB = createDebtorsTableB(formattedDate, dailySalesB);
+
+            let sectionDiv = document.getElementById(`section-${formattedDate}`);
+            if (!sectionDiv) {
+                sectionDiv = document.createElement('div');
+                sectionDiv.id = `section-${formattedDate}`;
+
+                const buttonContainer = document.createElement('div');
+                buttonContainer.style.display = 'flex';
+                buttonContainer.style.alignItems = 'center';
+
+                const dropdownButton = document.createElement('button');
+                dropdownButton.textContent = `Sales Records for ${formattedDate}`;
+                dropdownButton.onclick = () => {
+                    const content = document.getElementById(`content-${formattedDate}`);
+                    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                };
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.style.marginLeft = '10px';
+                deleteButton.onclick = () => {
+                    const password = prompt('Enter password to delete:');
+                    if (password === 'admin123') {
+                        sectionDiv.remove();
+                        salesB = salesB.filter(saleB => formatDate(new Date(saleB.date)) !== formattedDate);
+                        saveSalesB();
+                    } else {
+                        alert('Incorrect password');
+                    }
+                };
+
+                buttonContainer.appendChild(dropdownButton);
+                buttonContainer.appendChild(deleteButton);
+                sectionDiv.appendChild(buttonContainer);
+
+                const contentDiv = document.createElement('div');
+                contentDiv.id = `content-${formattedDate}`;
+                contentDiv.style.display = 'none';
+                contentDiv.appendChild(salesTableB);
+                contentDiv.appendChild(debtorsTableB);
+
+                sectionDiv.appendChild(contentDiv);
+                monthContentDiv.appendChild(sectionDiv);
+            }
+        }
+    }
+}
+
 
         // Function to group sales by date
         function groupSalesByDateB(salesB) {
-            return salesB.reduce((acc, saleB) => {
-                const date = saleB.date;
-                if (!acc[date]) {
-                    acc[date] = [];
-                }
-                acc[date].push(saleB);
-                return acc;
-            }, {});
+    return salesB.reduce((acc, saleB) => {
+        let d = new Date(saleB.date);
+        if (isNaN(d)) {
+            console.error(`Invalid sale date: ${saleB.date}`);
+            return acc;
         }
+
+        const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // YYYY-MM-DD
+
+        if (!acc[formattedDate]) {
+            acc[formattedDate] = [];
+        }
+        acc[formattedDate].push(saleB);
+        return acc;
+    }, {});
+}
 
         // Function to create sales table
         function createSalesTableB(date, salesB) {

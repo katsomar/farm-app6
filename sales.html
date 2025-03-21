@@ -50,44 +50,68 @@
 
         // Function to format date to DD/MM/YYYY
         function formatDate(date) {
-            const d = new Date(date);
-            if (isNaN(d.getTime())) {
-                const parts = date.split('/');
-                if (parts.length === 3) {
-                    const formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                    return formatDate(formattedDate);
-                }
-                console.error(`Invalid date: ${date}`);
-                return 'Invalid Date';
-            }
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = d.getFullYear();
-            return `${day}/${month}/${year}`;
+    let d;
+    if (date.includes('-')) {
+        // Handle YYYY-MM-DD format
+        const parts = date.split('-');
+        if (parts.length === 3) {
+            d = new Date(parts[0], parts[1] - 1, parts[2]); // Year, Month (0-based), Day
         }
+    } else if (date.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = date.split('/');
+        if (parts.length === 3) {
+            d = new Date(parts[2], parts[1] - 1, parts[0]); // Year, Month (0-based), Day
+        }
+    }
+    
+    if (isNaN(d)) {
+        console.error(`Invalid date: ${date}`);
+        return 'Invalid Date';
+    }
+
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
 
         // Function to format month to MM/YYYY
-        function formatMonth(month) {
-            const [year, monthNumber] = month.split('-');
-            return `${String(monthNumber).padStart(2, '0')}/${year}`;
+        function formatMonth(date) {
+    let d;
+    if (date.includes('-')) {
+        // Handle YYYY-MM format
+        const parts = date.split('-');
+        if (parts.length === 2) {
+            return `${parts[1]}/${parts[0]}`; // MM/YYYY
+        } else if (parts.length === 3) {
+            d = new Date(parts[0], parts[1] - 1, parts[2]); // Year, Month (0-based), Day
         }
+    } else if (date.includes('/')) {
+        // Handle DD/MM/YYYY format
+        const parts = date.split('/');
+        if (parts.length === 3) {
+            d = new Date(parts[2], parts[1] - 1, parts[0]); // Year, Month (0-based), Day
+        }
+    }
+
+    if (!d || isNaN(d)) {
+        console.error(`Invalid month: ${date}`);
+        return 'Invalid Month';
+    }
+
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
 
         // Function to group sales by month
         
-
         function groupSalesByMonth(sales) {
     return sales.reduce((acc, sale) => {
-        let parts = sale.date.split('/');
-        if (parts.length !== 3) {
-            console.error(`Invalid date format: ${sale.date}`);
+        let d = new Date(sale.date);
+        if (isNaN(d)) {
+            console.error(`Invalid date in sales: ${sale.date}`);
             return acc;
         }
 
-        // Ensure correct ordering: parts[0] = day, parts[1] = month, parts[2] = year
-        let day = parts[0], month = parts[1], year = parts[2];
-
-        const formattedMonth = `${year}-${month.padStart(2, '0')}`; // YYYY-MM
-
+        const formattedMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
         if (!acc[formattedMonth]) {
             acc[formattedMonth] = [];
         }
@@ -203,17 +227,15 @@
         }
 
         // Function to group sales by date
-        
         function groupSalesByDate(sales) {
     return sales.reduce((acc, sale) => {
-        let parts = sale.date.split('/');
-        if (parts.length !== 3) {
+        let d = new Date(sale.date);
+        if (isNaN(d)) {
             console.error(`Invalid sale date: ${sale.date}`);
             return acc;
         }
 
-        let day = parts[0], month = parts[1], year = parts[2];
-        const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`; // YYYY-MM-DD
+        const formattedDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; // YYYY-MM-DD
 
         if (!acc[formattedDate]) {
             acc[formattedDate] = [];
